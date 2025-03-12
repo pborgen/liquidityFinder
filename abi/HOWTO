@@ -1,0 +1,10 @@
+abigen --abi uniswapV2Pair.abi.json --pkg abi_uniswapv2pair --out uniswapv2pair.go  
+
+abigen --abi PulseXSwapRouter.abi.json --pkg abi_pulsex_swap_router --out pulseXSwapRouter.go
+
+
+abigen --abi PancakeV3Factory.abi.json --pkg abi_pancakeswapv3_factory --out pancakeswapv3factory.go
+
+abigen --abi uniswapV3Pool.abi.json --pkg abi_uniswapv3pool --out uniswapv3pool.go
+
+abigen --abi ultihelper.abi.json --pkg abi_ultihelper --out ultihelper.go

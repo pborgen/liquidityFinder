@@ -1,0 +1,38 @@
+{
+  "cSpell.words": [
+    "approvee",
+
+    "blockchainclient",
+    "blockchainutil",
+    "caculate",
+    "ciphertext",
+    "dexpairgather",
+    "ethclient",
+    "gethclient",
+    "godotenv",
+    "hexutil",
+    "joho",
+    "Keccak",
+    "modle",
+    "moralis",
+    "Msgf",
+    "mylogger",
+    "myqueue",
+    "paircaculate",
+    "Pancakeswapv",
+    "pborgen",
+    "protoimpl",
+    "protoreflect",
+    "pulsexhelper",
+    "simplev",
+    "testhelper",
+    "TSLA",
+    "twap",
+    "ulti",
+    "ultihelper",
+    "ultihelperservice",
+    "uniswapv",
+    "venv",
+    "zerolog"
+  ]
+}

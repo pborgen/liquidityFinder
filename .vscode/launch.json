@@ -1,0 +1,108 @@
+{
+  "version": "0.8.0",
+  "configurations": [
+    {
+      "name": "gatherPairs",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "cmd/start.go",
+      "args": ["gatherPairs"],
+      "env": {
+        "BASE_DIR": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "pathService",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "cmd/start.go",
+      "args": ["pathService"],
+      "env": {
+        "GOMEMLIMIT": "10GiB",
+        "BASE_DIR": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "gatherPairs-pulsex-v2",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "cmd/start.go",
+      "args": ["gatherPairs-pulsex-v2"],
+      "env": {
+        "BASE_DIR": "${workspaceFolder}"
+      }
+    },
+
+    {
+      "name": "updatePairs",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "cmd/start.go",
+      "args": ["updatePairs"],
+      "env": {
+        "BASE_DIR": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "updateReservesAndHighLiquidity",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "cmd/start.go",
+      "args": ["updateReservesAndHighLiquidity"],
+      "env": {
+        "BASE_DIR": "${workspaceFolder}"
+      }
+    },
+
+    {
+      "name": "addNewPairsForAllV3Dexes",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "cmd/start.go",
+      "args": ["addNewPairsForAllV3Dexes"],
+      "env": {
+        "BASE_DIR": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "detectTaxToken",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "cmd/start.go",
+      "args": ["detectTaxToken"],
+      "env": {
+        "BASE_DIR": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "writePlsPairsByDexId",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "cmd/start.go",
+      "args": ["writePlsPairsByDexId"],
+      "env": {
+        "BASE_DIR": "${workspaceFolder}"
+      }
+    },
+
+    {
+      "name": "listenMempool",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "cmd/start.go",
+      "args": ["listenMempool"],
+      "env": {
+        "BASE_DIR": "${workspaceFolder}"
+      }
+    }
+  ]
+}
