@@ -304,6 +304,56 @@ func GetAllWithLimit(limit int, shouldHydrate bool) ([]types.ModelPair, error) {
 	return results, nil
 }
 
+func GetAllPageAndLimit(page int, limit int, shouldHydrate bool) ([]types.ModelPair, error) {
+
+	db := database.GetDBConnection()
+
+	results := make([]types.ModelPair, 0)
+	rows, err := db.Query("SELECT " + pairColumnNames + " FROM " + tableName + " ORDER BY PAIR_ID ASC LIMIT $1 OFFSET $2", limit, (page-1)*limit)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		pair, err := scan(rows, shouldHydrate)
+
+		if err != nil {
+
+			return nil, err
+		}
+		results = append(results, *pair)
+	}
+
+	return results, nil
+}
+
+func GetAllWithDexIdPageAndLimit(dexId int, page int, limit int, shouldHydrate bool) ([]types.ModelPair, error) {
+
+	db := database.GetDBConnection()
+
+	results := make([]types.ModelPair, 0)
+	rows, err := db.Query("SELECT " + pairColumnNames + " FROM " + tableName + " WHERE DEX_ID = $1 ORDER BY PAIR_ID ASC LIMIT $2 OFFSET $3", dexId, limit, (page-1)*limit)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		pair, err := scan(rows, shouldHydrate)
+
+		if err != nil {
+
+			return nil, err
+		}
+		results = append(results, *pair)
+	}
+
+	return results, nil
+}
+
 func GetAll(shouldHydrate bool) ([]types.ModelPair, error) {
 
 	db := database.GetDBConnection()

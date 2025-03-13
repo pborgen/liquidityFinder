@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/pborgen/liquidityFinder/cmd/dexpairgather"
+	"github.com/pborgen/liquidityFinder/internal/api/router"
 
-	"github.com/pborgen/liquidityFinder/internal/blockchain/mempool"
 	"github.com/pborgen/liquidityFinder/internal/myConfig"
 	"github.com/pborgen/liquidityFinder/internal/mylogger"
 	"github.com/pborgen/liquidityFinder/internal/service/pairService"
@@ -45,7 +45,15 @@ func main() {
 
 	myConfig.GetInstance()
 	
-	if processName == "test" {
+	if processName == "api" {
+		// Initialize and start the API server
+		r := router.SetupRouter()
+		port := ":8080"
+		log.Info().Msgf("API server starting on port %s", port)
+		if err := r.Run(port); err != nil {
+			log.Fatal().Err(err).Msg("Failed to start API server")
+		}
+	} else if processName == "test" {
 		
 	} else if processName == "gatherPairs" {
 		for {	
@@ -59,12 +67,7 @@ func main() {
 		}
 	} else if processName == "addNewPairsForAllV3Dexes" {
 		pairServiceV3.AddNewPairForAllV3Dexes(pulsechainNetworkId)
-	} else if processName == "listenMempool" {
-		start := time.Now()
-		mempool.SubscribeToPendingTransactions()
-		elapsed := time.Since(start)
 
-		log.Info().Msgf("Time taken: %s", elapsed)
 	} else if processName == "writePlsPairsByDexId" {
 		dexpairgather.WriteToFilePlsPairsByDexId([]int{3, 4})
 	} else if processName == "fixPairOrdering" {

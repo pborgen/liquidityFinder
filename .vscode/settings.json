@@ -1,7 +1,6 @@
 {
   "cSpell.words": [
     "approvee",
-
     "blockchainclient",
     "blockchainutil",
     "caculate",
@@ -10,6 +9,7 @@
     "ethclient",
     "gethclient",
     "godotenv",
+    "gonic",
     "hexutil",
     "joho",
     "Keccak",
