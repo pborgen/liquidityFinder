@@ -9,91 +9,103 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const MAX_AMOUNT_OF_BLOCKS_TO_PROCESS = 100
 
 func Start() {
 
 
-	maxAmountOfBlocksToProcess := uint64(1000)
-	largestLastBlockNumberUpdated, err := GetLargestLastBlockNumberUpdated()
+	
+	largestTokenAmountBlockNumberUpdated, err := GetLargestLastBlockNumberUpdated()
 	if err != nil {
 		panic(err)
 	}
 
-	var fromBlock uint64 = 0
-	var toBlock uint64 = 0
-	if largestLastBlockNumberUpdated == 0 {
-		fromBlock = 1_000_000
-		toBlock = fromBlock + maxAmountOfBlocksToProcess
+	var fromBlockNumber uint64 = 0
+	var toBlockNumber uint64 = 0
+
+	// Special case for the first run
+	if largestTokenAmountBlockNumberUpdated == 0 {
+		fromBlockNumber = 460000
+		toBlockNumber = fromBlockNumber + MAX_AMOUNT_OF_BLOCKS_TO_PROCESS
 	} else {
-		if largestLastBlockNumberUpdated > maxAmountOfBlocksToProcess {
-			fromBlock = largestLastBlockNumberUpdated - (maxAmountOfBlocksToProcess)
-			toBlock = fromBlock + maxAmountOfBlocksToProcess
-		}
+		fromBlockNumber = largestTokenAmountBlockNumberUpdated - MAX_AMOUNT_OF_BLOCKS_TO_PROCESS
+		toBlockNumber = fromBlockNumber + MAX_AMOUNT_OF_BLOCKS_TO_PROCESS
+
+		fromBlockNumber, toBlockNumber = 
+			calculateNextFromAndToBlockNumbers(
+				fromBlockNumber, 
+				toBlockNumber,
+		)
 	}
 
-	
-
-
 	for {
-		modelTransferEventList, err := transferEventService.GetEventsForBlockRangeOrdered(fromBlock, toBlock)
+		modelTransferEventList, err := transferEventService.GetEventsForBlockRangeOrdered(fromBlockNumber, toBlockNumber)
 
 		if err != nil {
-			log.Error().Msgf("Error getting transfers for block range. Retrying... %d, %d, %v", fromBlock, toBlock, err)
+			log.Error().Msgf("Error getting transfers for block range. Retrying... %d, %d, %v", fromBlockNumber, toBlockNumber, err)
 			continue
 		}
 
-		if len(modelTransferEventList) == 0 {
-			fromBlock = toBlock + 1
-			toBlock = fromBlock + maxAmountOfBlocksToProcess - 1
-			continue
-		}
+		if len(modelTransferEventList) > 0 {
 
-		modelTokenAmounts, err := getModelTokenAmountsFromTransferEvents(modelTransferEventList)
+			modelTokenAmounts, err := getModelTokenAmountsFromTransferEvents(modelTransferEventList)
 
-		if err != nil {
-			panic(err)
-		}
-
-		for _, modelTransferEvent := range modelTransferEventList {
-			fromAddress := modelTransferEvent.FromAddress
-			toAddress := modelTransferEvent.ToAddress
-			contractAddress := modelTransferEvent.ContractAddress
-			amount := modelTransferEvent.EventValue
-
-			log.Info().Msgf("EventValue: %s", amount.String())
-			// Subtract the amount from the from address
-			modelTokenAmountFrom := modelTokenAmounts[contractAddress][fromAddress]
-			modelTokenAmountFrom.Amount = modelTokenAmountFrom.Amount.Sub(modelTokenAmountFrom.Amount, amount)
-			// If amount becomes negative, set it to 0
-			if modelTokenAmountFrom.Amount.Sign() < 0 {
-				modelTokenAmountFrom.Amount = new(big.Int).SetInt64(0)
+			if err != nil {
+				panic(err)
 			}
 
-			modelTokenAmountFrom.LastBlockNumberUpdated = modelTransferEvent.BlockNumber
-			modelTokenAmountFrom.LastLogIndexUpdated = modelTransferEvent.LogIndex
+			for _, modelTransferEvent := range modelTransferEventList {
+				fromAddress := modelTransferEvent.FromAddress
+				toAddress := modelTransferEvent.ToAddress
+				contractAddress := modelTransferEvent.ContractAddress
+				amount := modelTransferEvent.EventValue
 
-			// Add the amount to the to address
-			modelTokenAmountTo := modelTokenAmounts[contractAddress][toAddress]
-			modelTokenAmountTo.Amount = modelTokenAmountTo.Amount.Add(modelTokenAmountTo.Amount, amount)
+				log.Info().Msgf("EventValue: %s", amount.String())
+				// Subtract the amount from the from address
+				modelTokenAmountFrom := modelTokenAmounts[contractAddress][fromAddress]
+				modelTokenAmountFrom.Amount = modelTokenAmountFrom.Amount.Sub(modelTokenAmountFrom.Amount, amount)
+				// If amount becomes negative, set it to 0
+				if modelTokenAmountFrom.Amount.Sign() < 0 {
+					modelTokenAmountFrom.Amount = new(big.Int).SetInt64(0)
+				}
 
-			modelTokenAmountTo.LastBlockNumberUpdated = modelTransferEvent.BlockNumber
-			modelTokenAmountTo.LastLogIndexUpdated = modelTransferEvent.LogIndex
+				modelTokenAmountFrom.LastBlockNumberUpdated = modelTransferEvent.BlockNumber
+				modelTokenAmountFrom.LastLogIndexUpdated = modelTransferEvent.LogIndex
 
-			modelTokenAmounts[contractAddress][fromAddress] = modelTokenAmountFrom
-			modelTokenAmounts[contractAddress][toAddress] = modelTokenAmountTo
-		}
+				// Add the amount to the to address
+				modelTokenAmountTo := modelTokenAmounts[contractAddress][toAddress]
+				modelTokenAmountTo.Amount = modelTokenAmountTo.Amount.Add(modelTokenAmountTo.Amount, amount)
 
-		tokenAmounts := make([]types.ModelTokenAmount, 0)
-		for _, ownerAddressMap := range modelTokenAmounts {
-			for _, modelTokenAmount := range ownerAddressMap {
-				tokenAmounts = append(tokenAmounts, *modelTokenAmount)
+				modelTokenAmountTo.LastBlockNumberUpdated = modelTransferEvent.BlockNumber
+				modelTokenAmountTo.LastLogIndexUpdated = modelTransferEvent.LogIndex
+
+				// Only add if balance is greater than 0
+				if modelTokenAmountFrom.Amount.Cmp(big.NewInt(0)) > 0 {
+					modelTokenAmounts[contractAddress][fromAddress] = modelTokenAmountFrom
+				}
+				if modelTokenAmountTo.Amount.Cmp(big.NewInt(0)) > 0 {
+					modelTokenAmounts[contractAddress][toAddress] = modelTokenAmountTo
+				}
+			}
+
+			tokenAmounts := make([]types.ModelTokenAmount, 0)
+			for _, ownerAddressMap := range modelTokenAmounts {
+				for _, modelTokenAmount := range ownerAddressMap {
+					tokenAmounts = append(tokenAmounts, *modelTokenAmount)
+				}
+			}
+
+			_, err = BatchInsertOrUpdate(tokenAmounts)
+			if err != nil {
+				panic(err)
 			}
 		}
 
-		_, err = BatchInsertOrUpdate(tokenAmounts)
-		if err != nil {
-			panic(err)
-		}
+		fromBlockNumber, toBlockNumber = 
+			calculateNextFromAndToBlockNumbers(
+				fromBlockNumber, 
+				toBlockNumber,
+			)
 	}
 }
 
@@ -151,4 +163,32 @@ func getModelTokenAmountsFromTransferEvents(
 }
 
 
+func calculateNextFromAndToBlockNumbers(fromBlockNumber uint64, toBlockNumber uint64) (nextFromBlockNumber uint64, nextToBlockNumber uint64) {
+	if fromBlockNumber <= 0 {
+		panic("fromBlockNumber must be greater than 0")
+	}
 
+	if toBlockNumber <= 0 {
+		panic("toBlockNumber must be greater than 0")
+	}
+
+	maxBlockNumberInTransferEventTable, err := transferEventService.GetLargestBlockNumber()
+
+	if err != nil {
+		panic(err)
+	}
+
+	nextFromBlockNumber = toBlockNumber + 1
+	nextToBlockNumber = nextFromBlockNumber + MAX_AMOUNT_OF_BLOCKS_TO_PROCESS
+
+	if nextFromBlockNumber > maxBlockNumberInTransferEventTable {
+		nextFromBlockNumber = maxBlockNumberInTransferEventTable
+	}
+
+	if nextToBlockNumber > maxBlockNumberInTransferEventTable {
+		nextToBlockNumber = maxBlockNumberInTransferEventTable
+	}
+
+
+	return nextFromBlockNumber, nextToBlockNumber
+}

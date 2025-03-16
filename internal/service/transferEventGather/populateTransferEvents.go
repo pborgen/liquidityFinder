@@ -2,12 +2,14 @@ package transferEventGather
 
 import (
 	"context"
-	"log"
+
+	"math/big"
 
 	blockchainclient "github.com/pborgen/liquidityFinder/internal/blockchain/blockchainClient"
 	blockchainutil "github.com/pborgen/liquidityFinder/internal/blockchain/blockchainutil"
 	"github.com/pborgen/liquidityFinder/internal/service/transferEventService"
 	"github.com/pborgen/liquidityFinder/internal/types"
+	"github.com/rs/zerolog/log"
 )
 
 // @param map[common.Address]bool - a map of pairs that we are monitoring
@@ -36,7 +38,7 @@ func Start() {
 
 
 	if fromBlock == 0 {
-		fromBlock = 460_000 // transfer events start somewhere after this block
+		fromBlock = 462_000 // transfer events start somewhere after this block
 	}
 
 
@@ -55,34 +57,46 @@ func Start() {
 
 
 		if err != nil {
-			log.Println("Error getting transfers for block range. Retrying... ", fromBlock, toBlock, err)
+			log.Error().Msgf("Error getting transfers for block range. Retrying... %d, %d, %v", fromBlock, toBlock, err)
 			continue
 		}
 
+		shouldInsert := false
 		hasError := false
 
-		transferEvents := []types.ModelTransferEvent{}
-		for index, transfer := range transfers {
-			
-			transferEvents = append(transferEvents, types.ModelTransferEvent{
-				BlockNumber: transfer.Block,
-				TransactionHash: transfer.TxHash.Hex(),
-				LogIndex: index,
-				ContractAddress: transfer.ContractAddress,
-				FromAddress: transfer.From,
-				ToAddress: transfer.To,
-				EventValue: transfer.Value,
-			})
+		if len(transfers) > 0 {
+			shouldInsert = true
 		}
 
-		_, err = transferEventService.BatchInsertOrUpdate(transferEvents)
-		if err != nil {
-			log.Println("Error inserting transfer events. Retrying... ", fromBlock, toBlock, err)
-			panic(err)
+		if shouldInsert {
+			transferEvents := []types.ModelTransferEvent{}
+			for index, transfer := range transfers {
+				
+				// Do not insert transfer events with value 0
+				if transfer.Value.Cmp(big.NewInt(0)) == 0 {
+					continue
+				}
+
+				transferEvents = append(transferEvents, types.ModelTransferEvent{
+					BlockNumber: transfer.Block,
+					TransactionHash: transfer.TxHash.Hex(),
+					LogIndex: index,
+					ContractAddress: transfer.ContractAddress,
+					FromAddress: transfer.From,
+					ToAddress: transfer.To,
+					EventValue: transfer.Value,
+				})
+			}
+
+			_, err = transferEventService.BatchInsertOrUpdate(transferEvents)
+			if err != nil {
+				log.Error().Msgf("Error inserting transfer events. Retrying... %d, %d, %v", fromBlock, toBlock, err)
+				panic(err)
+			}
 		}
 
 		if hasError {
-			log.Println("Error inserting transfer event. Retrying... ", fromBlock, toBlock)
+			log.Error().Msgf("Error inserting transfer event. Retrying... %d, %d", fromBlock, toBlock)
 			continue
 		} else {
 	
@@ -93,6 +107,7 @@ func Start() {
 			} else {
 				toBlock = fromBlock + maxAmountOfBlocksToProcess
 			}
+			log.Debug().Msgf("Processed block range: %d - %d", fromBlock, toBlock)
 		}
 	}
 }

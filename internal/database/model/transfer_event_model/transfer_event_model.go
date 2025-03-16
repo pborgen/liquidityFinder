@@ -258,12 +258,12 @@ func BatchInsertOrUpdate(transferEvents []types.ModelTransferEvent) ([]int, erro
 	sql := sqlBuilder.String()
 
 	// Prepare the insert statement
-	ids, err := db.Exec(sql, args...)
+	_, err := db.Exec(sql, args...)
 	if err != nil {
 		log.Error().Msg(sql)
 		return nil, err
 	}
-	log.Info().Msgf("ids: %v", ids)
+	//log.Info().Msgf("ids: %v", ids)
 	//ids := make([]int, len(transferEvents))
 
 
