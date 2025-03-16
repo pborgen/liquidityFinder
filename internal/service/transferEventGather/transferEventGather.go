@@ -17,6 +17,7 @@ import (
 
 // TransferEvent represents a token transfer event
 type TransferEvent struct {
+    ContractAddress common.Address
     From   common.Address
     To     common.Address
     Value  *big.Int
@@ -222,6 +223,7 @@ func (t *TokenEventTracker) parseTransferEvent(log types.Log) (TransferEvent, er
     event := TransferEvent{
         TxHash: log.TxHash,
         Block:  log.BlockNumber,
+        ContractAddress: log.Address,
     }
 
     // Parse the From address (first topic after event signature)

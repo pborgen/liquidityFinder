@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pborgen/liquidityFinder/internal/database/model/dex"
 	"github.com/pborgen/liquidityFinder/internal/database/model/erc20"
+	"github.com/rs/zerolog/log"
 )
 
 
@@ -41,6 +42,30 @@ type NameValue struct {
 	Name string `postgres.Table:"NAME"`
 	Value string `postgres.Table:"VALUE"`
 	DataType int `postgres.Table:"DATA_TYPE"`
+}
+
+type ModelTransferEvent struct {
+	Id int `postgres.Table:"ID"`
+	BlockNumber uint64 `postgres.Table:"BLOCK_NUMBER"`
+	TransactionHash string `postgres.Table:"TRANSACTION_HASH"`
+	LogIndex int `postgres.Table:"LOG_INDEX"`
+	ContractAddress common.Address `postgres.Table:"CONTRACT_ADDRESS"`
+	FromAddress common.Address `postgres.Table:"FROM_ADDRESS"`
+	ToAddress common.Address `postgres.Table:"TO_ADDRESS"`
+	EventValue *big.Int `postgres.Table:"EVENT_VALUE"`
+}
+
+type ModelTokenAmount struct {
+	Id int `postgres.Table:"ID"`
+	TokenAddress common.Address `postgres.Table:"TOKEN_ADDRESS"`
+	OwnerAddress common.Address `postgres.Table:"OWNER_ADDRESS"`
+	Amount *big.Int `postgres.Table:"AMOUNT"`
+	LastBlockNumberUpdated uint64 `postgres.Table:"LAST_BLOCK_NUMBER_UPDATED"`
+	LastLogIndexUpdated int `postgres.Table:"LAST_LOG_INDEX_UPDATED"`
+}
+
+func PrintModelTokenAmount(modelTokenAmount *ModelTokenAmount) {
+	log.Info().Msgf("modelTokenAmount: %s, %s, %s, %d, %d", modelTokenAmount.TokenAddress.Hex(), modelTokenAmount.OwnerAddress.Hex(), modelTokenAmount.Amount.String(), modelTokenAmount.LastBlockNumberUpdated, modelTokenAmount.LastLogIndexUpdated)
 }
 
 type PairsOrganized struct {

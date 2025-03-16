@@ -241,3 +241,31 @@ func FileExists(filePath string) bool {
 	}
 	return !info.IsDir()
 }
+
+func IsWithinNumeric78Range(value *big.Int) bool {
+	if value == nil {
+		return false
+	}
+
+	// NUMERIC(78,0) max value is 10^78 - 1
+	maxValue := new(big.Int)
+	maxValue.Exp(big.NewInt(10), big.NewInt(78), nil)
+	maxValue.Sub(maxValue, big.NewInt(1))
+
+	// NUMERIC(78,0) min value is -(10^78 - 1)
+	minValue := new(big.Int)
+	minValue.Neg(maxValue)
+
+	// Check if value is within range
+	return value.Cmp(maxValue) <= 0 && value.Cmp(minValue) >= 0
+}
+
+// Check if address exists in slice
+func ContainsAddress(addresses []common.Address, search common.Address) bool {
+	for _, addr := range addresses {
+		if addr == search {
+			return true
+		}
+	}
+	return false
+}

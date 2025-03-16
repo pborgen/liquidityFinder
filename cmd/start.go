@@ -11,6 +11,8 @@ import (
 	"github.com/pborgen/liquidityFinder/internal/mylogger"
 	"github.com/pborgen/liquidityFinder/internal/service/pairService"
 	"github.com/pborgen/liquidityFinder/internal/service/taxTokenDetector"
+	"github.com/pborgen/liquidityFinder/internal/service/tokenAmountService"
+	"github.com/pborgen/liquidityFinder/internal/service/transferEventGather"
 
 	"github.com/rs/zerolog/log"
 
@@ -67,7 +69,12 @@ func main() {
 		}
 	} else if processName == "addNewPairsForAllV3Dexes" {
 		pairServiceV3.AddNewPairForAllV3Dexes(pulsechainNetworkId)
-
+	} else if processName == "populateTransferEvents" {
+		transferEventGather.Start()
+		time.Sleep(10 * time.Second)
+	} else if processName == "processTokenAmounts" {
+		tokenAmountService.Start()
+		time.Sleep(10 * time.Second)
 	} else if processName == "writePlsPairsByDexId" {
 		dexpairgather.WriteToFilePlsPairsByDexId([]int{3, 4})
 	} else if processName == "fixPairOrdering" {
