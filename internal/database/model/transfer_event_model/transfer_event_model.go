@@ -195,79 +195,83 @@ func BatchInsertOrUpdate(transferEvents []types.ModelTransferEvent) ([]int, erro
 		return nil, nil
 	}
 
-	db := database.GetDBConnection()
+	const batchSize = 4000
 
-	var sqlBuilder strings.Builder
-	sqlBuilder.WriteString(`
-		INSERT INTO ` + tableName + ` (
-			BLOCK_NUMBER, TRANSACTION_HASH, LOG_INDEX, CONTRACT_ADDRESS, 
-			FROM_ADDRESS, TO_ADDRESS, EVENT_VALUE
-		) VALUES `)
-
-	args := []interface{}{}
-	count := 1
-
-	for _, event := range transferEvents {
-		if !myUtil.IsWithinNumeric78Range(event.EventValue) {
-			continue
+	for i := 0; i < len(transferEvents); i += batchSize {
+		end := i + batchSize
+		if end > len(transferEvents) {
+			end = len(transferEvents)
 		}
 
-		if count > 1 {
-			sqlBuilder.WriteString(",")
+		db := database.GetDBConnection()
+
+		var sqlBuilder strings.Builder
+		sqlBuilder.WriteString(`
+			INSERT INTO ` + tableName + ` (
+				BLOCK_NUMBER, TRANSACTION_HASH, LOG_INDEX, CONTRACT_ADDRESS, 
+				FROM_ADDRESS, TO_ADDRESS, EVENT_VALUE
+			) VALUES `)
+
+		args := []interface{}{}
+		count := 1
+
+		for _, event := range transferEvents[i:end] {
+			if !myUtil.IsWithinNumeric78Range(event.EventValue) {
+				continue
+			}
+
+			if count > 1 {
+				sqlBuilder.WriteString(",")
+			}
+
+			sqlBuilder.WriteString("($")
+			sqlBuilder.WriteString(strconv.Itoa(count))
+			sqlBuilder.WriteString(", $")
+			sqlBuilder.WriteString(strconv.Itoa(count+1))
+			sqlBuilder.WriteString(", $")
+			sqlBuilder.WriteString(strconv.Itoa(count+2))
+			sqlBuilder.WriteString(", $")
+			sqlBuilder.WriteString(strconv.Itoa(count+3))
+			sqlBuilder.WriteString(", $")
+			sqlBuilder.WriteString(strconv.Itoa(count+4))
+			sqlBuilder.WriteString(", $")
+			sqlBuilder.WriteString(strconv.Itoa(count+5))
+			sqlBuilder.WriteString(", $")
+			sqlBuilder.WriteString(strconv.Itoa(count+6))
+			sqlBuilder.WriteString(")")
+
+			count += 7
+
+			args = append(
+				args, 
+				event.BlockNumber, 
+				event.TransactionHash, 
+				event.LogIndex, 
+				event.ContractAddress, 
+				event.FromAddress, 
+				event.ToAddress, 
+				event.EventValue.String(),
+			)
 		}
 
-		sqlBuilder.WriteString("($")
-		sqlBuilder.WriteString(strconv.Itoa(count))
-		sqlBuilder.WriteString(", $")
-		sqlBuilder.WriteString(strconv.Itoa(count+1))
-		sqlBuilder.WriteString(", $")
-		sqlBuilder.WriteString(strconv.Itoa(count+2))
-		sqlBuilder.WriteString(", $")
-		sqlBuilder.WriteString(strconv.Itoa(count+3))
-		sqlBuilder.WriteString(", $")
-		sqlBuilder.WriteString(strconv.Itoa(count+4))
-		sqlBuilder.WriteString(", $")
-		sqlBuilder.WriteString(strconv.Itoa(count+5))
-		sqlBuilder.WriteString(", $")
-		sqlBuilder.WriteString(strconv.Itoa(count+6))
-		sqlBuilder.WriteString(")")
+		sqlBuilder.WriteString(`
+			ON CONFLICT (BLOCK_NUMBER, LOG_INDEX) DO UPDATE SET 
+				TRANSACTION_HASH = EXCLUDED.TRANSACTION_HASH,
+				CONTRACT_ADDRESS = EXCLUDED.CONTRACT_ADDRESS,
+				FROM_ADDRESS = EXCLUDED.FROM_ADDRESS,
+				TO_ADDRESS = EXCLUDED.TO_ADDRESS,
+				EVENT_VALUE = EXCLUDED.EVENT_VALUE 
+			RETURNING ID`)
 
-		count += 7
+		sql := sqlBuilder.String()
 
-		args = append(
-			args, 
-			event.BlockNumber, 
-			event.TransactionHash, 
-			event.LogIndex, 
-			event.ContractAddress, 
-			event.FromAddress, 
-			event.ToAddress, 
-			event.EventValue.String(),
-		)
+		// Prepare the insert statement
+		_, err := db.Exec(sql, args...)
+		if err != nil {
+			log.Error().Msg(sql)
+			return nil, err
+		}
 	}
-
-	sqlBuilder.WriteString(`
-		ON CONFLICT (BLOCK_NUMBER, LOG_INDEX) DO UPDATE SET 
-			TRANSACTION_HASH = EXCLUDED.TRANSACTION_HASH,
-			CONTRACT_ADDRESS = EXCLUDED.CONTRACT_ADDRESS,
-			FROM_ADDRESS = EXCLUDED.FROM_ADDRESS,
-			TO_ADDRESS = EXCLUDED.TO_ADDRESS,
-			EVENT_VALUE = EXCLUDED.EVENT_VALUE 
-		RETURNING ID`)
-
-	sql := sqlBuilder.String()
-
-	// Prepare the insert statement
-	_, err := db.Exec(sql, args...)
-	if err != nil {
-		log.Error().Msg(sql)
-		return nil, err
-	}
-	//log.Info().Msgf("ids: %v", ids)
-	//ids := make([]int, len(transferEvents))
-
-
-
 	return nil, nil
 }
 
