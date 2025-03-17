@@ -39,6 +39,7 @@ func Start() {
 	}
 
 	for {
+		log.Info().Msgf("Processing block range: %d - %d", fromBlockNumber, toBlockNumber)
 		modelTransferEventList, err := transferEventService.GetEventsForBlockRangeOrdered(fromBlockNumber, toBlockNumber)
 
 		if err != nil {
@@ -79,13 +80,10 @@ func Start() {
 				modelTokenAmountTo.LastBlockNumberUpdated = modelTransferEvent.BlockNumber
 				modelTokenAmountTo.LastLogIndexUpdated = modelTransferEvent.LogIndex
 
-				// Only add if balance is greater than 0
-				if modelTokenAmountFrom.Amount.Cmp(big.NewInt(0)) > 0 {
-					modelTokenAmounts[contractAddress][fromAddress] = modelTokenAmountFrom
-				}
-				if modelTokenAmountTo.Amount.Cmp(big.NewInt(0)) > 0 {
-					modelTokenAmounts[contractAddress][toAddress] = modelTokenAmountTo
-				}
+
+				modelTokenAmounts[contractAddress][fromAddress] = modelTokenAmountFrom
+				modelTokenAmounts[contractAddress][toAddress] = modelTokenAmountTo
+				
 			}
 
 			tokenAmounts := make([]types.ModelTokenAmount, 0)
@@ -101,11 +99,20 @@ func Start() {
 			}
 		}
 
-		fromBlockNumber, toBlockNumber = 
+		fromBlockNumberTemp, toBlockNumberTemp := 
 			calculateNextFromAndToBlockNumbers(
 				fromBlockNumber, 
 				toBlockNumber,
 			)
+
+		if fromBlockNumberTemp == fromBlockNumber && toBlockNumberTemp == toBlockNumber {
+			log.Info().Msgf("Reached the largest transfer event block number.")
+			break
+		} else {
+			fromBlockNumber = fromBlockNumberTemp
+			toBlockNumber = toBlockNumberTemp
+		}
+		
 	}
 }
 

@@ -1,19 +1,18 @@
 services:
   postgres:
+    container_name: postgres
     image: postgres:17
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "<Password>"
+      POSTGRES_PASSWORD: "Ilikegumonmyshoe2222"
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./certs/server.crt:/root/dev/caddy/certs/server.crt # Mount certificate
-      - ./certs/server.key:/root/dev/caddy/certs/server.key # Mount key
+      - /root/dev/caddy/certs/server.crt:/var/lib/postgresql/data/server.crt
+      - /root/dev/caddy/certs/server.key:/var/lib/postgresql/data/server.key
     command: >
       -c ssl=on
-      -c ssl_cert_file=/root/dev/caddy/certs/server.crt
-      -c ssl_key_file=/root/dev/caddy/certs/server.key
     restart: unless-stopped
     networks:
       - caddy
