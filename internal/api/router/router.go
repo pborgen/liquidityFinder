@@ -30,10 +30,6 @@ func SetupRouter() *gin.Engine {
 		{
 			pairs.GET("", handlers.GetPairs)
 		}
-
-
-
-
 	}
 
 
