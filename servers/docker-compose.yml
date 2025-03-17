@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "<Password>"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./certs/server.crt:/root/dev/caddy/certs/server.crt # Mount certificate
+      - ./certs/server.key:/root/dev/caddy/certs/server.key # Mount key
+    command: >
+      -c ssl=on
+      -c ssl_cert_file=/root/dev/caddy/certs/server.crt
+      -c ssl_key_file=/root/dev/caddy/certs/server.key
+    restart: unless-stopped
+    networks:
+      - caddy
+  caddy:
+    container_name: caddy
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      - CADDY_INGRESS_NETWORK=caddy
+    networks:
+      - caddy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2019/health"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  pgdata:
+  caddy-data:
+  caddy-config:
+
+networks:
+  caddy:
+    external: true
