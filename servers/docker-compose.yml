@@ -4,7 +4,7 @@ services:
     image: postgres:17
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "Ilikegumonmyshoe2222"
+      POSTGRES_PASSWORD: "<Password>"
     ports:
       - "5432:5432"
     volumes:
@@ -36,6 +36,24 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  watchtower:
+    image: containrrr/watchtower:1.5.3
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: >
+      --include-stopped --interval 30 --log-opt max-size=100m -v /root/.docker/config.json:/config.json postgres caddy  # Only watch these containers
+    restart: unless-stopped
+    networks:
+      - caddy
+
+  liquidity-finder:
+    image: registry.digitalocean.com/hexlive/liquidity-finder:latest
+    container_name: liquidity-finder
+    restart: unless-stopped
+    networks:
+      - caddy
 
 volumes:
   pgdata:
