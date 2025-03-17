@@ -43,17 +43,41 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: >
-      --include-stopped --interval 30 --log-opt max-size=100m -v /root/.docker/config.json:/config.json postgres caddy  # Only watch these containers
+      --include-stopped --interval 30 --log-opt max-size=100m -v /root/.docker/config.json:/config.json liquidity-finder  # Only watch these containers
     restart: unless-stopped
     networks:
       - caddy
 
   liquidity-finder:
-    image: registry.digitalocean.com/hexlive/liquidity-finder:latest
     container_name: liquidity-finder
+    image: registry.digitalocean.com/hexlive/liquidity-finder:latest
+    restart: unless-stopped
+    volumes:
+      - /opt/.env:/opt/.env
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    logging:
+      options:
+        max-size: "10m"
+    command: /app/cmd/start populateTransferEvents
+
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    container_name: dragonfly
+    ports:
+      - "6379:6379"
+    ulimits:
+      memlock: -1
+    volumes:
+      - /root/dev/caddy/dragonfly-data:/data
+    command: >
+      --maxmemory 2g
+      --dir /data
+      --snapshot_cron "0 1 * * *"
     restart: unless-stopped
     networks:
       - caddy
+
 
 volumes:
   pgdata:
