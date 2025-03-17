@@ -2,6 +2,9 @@ package transferEventGather
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"math/big"
 
@@ -17,6 +20,21 @@ import (
 
 func Start() {
 
+	// Create a context that we can cancel
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Create channel for signal handling
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Start a goroutine to handle shutdown signals
+	go func() {
+		sig := <-sigChan
+		log.Info().Msgf("Received shutdown signal: %v", sig)
+		cancel()
+	}()
+	
 	client := blockchainclient.GetHttpClient()
 
 	transferEventGather, err := NewTokenEventTracker(client)
@@ -52,6 +70,12 @@ func Start() {
 
 
 	for {
+		// Check if context is done before processing
+		if ctx.Err() != nil {
+			log.Info().Msg("Shutting down transfer event gatherer...")
+			return
+		}
+		
 		transfers, err := 
 			transferEventGather.GetAllTransferEventsForBlockRange(context.Background(), fromBlock, toBlock)
 
