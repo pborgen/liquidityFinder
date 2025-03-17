@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -24,18 +23,7 @@ func GetPairs(c *gin.Context) {
 	limitNum, _ := strconv.Atoi(limit)
 
 	if limitNum > 500 {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-			Success: false,
-			Error: struct {
-				Code    string      `json:"code"`
-				Message string      `json:"message"`
-				Details interface{} `json:"details,omitempty"`
-			}{
-				Code:    "INTERNAL_ERROR",
-				Message: "Limit is too high",
-				Details: errors.New("limit is too high"),
-			},
-		})
+		HandleErrorLimitToHighError(c)
 		return
 	}
 
@@ -51,18 +39,7 @@ func GetPairs(c *gin.Context) {
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get pairs")
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-			Success: false,
-			Error: struct {
-				Code    string      `json:"code"`
-				Message string      `json:"message"`
-				Details interface{} `json:"details,omitempty"`
-			}{
-				Code:    "INTERNAL_ERROR",
-				Message: "Failed to get pairs",
-				Details: err.Error(),
-			},
-		})
+		HandleGeneralError(c, "Failed to get pairs", err)
 		return
 	}
 
@@ -79,7 +56,7 @@ func GetPairs(c *gin.Context) {
 	// Return paginated response
 	c.JSON(http.StatusOK, models.PairsResponse{
 		Success: true,
-		Data:    pairs[start:end],
+		Data:    pairs,
 		Pagination: models.Pagination{
 			CurrentPage:  pageNum,
 			TotalPages:   totalPages,
