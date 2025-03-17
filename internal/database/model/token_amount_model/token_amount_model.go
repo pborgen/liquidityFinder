@@ -37,81 +37,86 @@ func init() {
 
 }
 
-func BatchInsertOrUpdate(tokenAmounts []types.ModelTokenAmount) (int64, error) {
+func BatchInsertOrUpdate(tokenAmounts []types.ModelTokenAmount) (error) {
 	if len(tokenAmounts) == 0 {
-		return 0, nil
+		return nil
 	}
 
-	db := database.GetDBConnection()
+	const batchSize = 4000
 
-	var sqlBuilder strings.Builder
-	sqlBuilder.WriteString(`
-		INSERT INTO ` + tableName + ` (
-			TOKEN_ADDRESS, OWNER_ADDRESS, AMOUNT, LAST_BLOCK_NUMBER_UPDATED, LAST_LOG_INDEX_UPDATED
-		) VALUES `)
-
-	args := []interface{}{}
-	count := 1
-
-	for _, element := range tokenAmounts {
-		if !myUtil.IsWithinNumeric78Range(element.Amount) {
-			continue
+	for i := 0; i < len(tokenAmounts); i += batchSize {
+		end := i + batchSize
+		if end > len(tokenAmounts) {
+			end = len(tokenAmounts)
 		}
 
-		log.Info().Msgf("element:  %s",  element.Amount.String())
-		if count > 1 {
-			sqlBuilder.WriteString(",")
+		db := database.GetDBConnection()
+
+		var sqlBuilder strings.Builder
+		sqlBuilder.WriteString(`
+			INSERT INTO ` + tableName + ` (
+				TOKEN_ADDRESS, OWNER_ADDRESS, AMOUNT, LAST_BLOCK_NUMBER_UPDATED, LAST_LOG_INDEX_UPDATED
+			) VALUES `)
+
+		args := []interface{}{}
+		count := 1
+
+		for _, element := range tokenAmounts[i:end] {
+			if !myUtil.IsWithinNumeric78Range(element.Amount) {
+				continue
+			}
+
+			log.Info().Msgf("element:  %s",  element.Amount.String())
+			if count > 1 {
+				sqlBuilder.WriteString(",")
+			}
+
+			sqlBuilder.WriteString("($")
+			sqlBuilder.WriteString(strconv.Itoa(count))
+			sqlBuilder.WriteString(", $")
+			sqlBuilder.WriteString(strconv.Itoa(count+1))
+			sqlBuilder.WriteString(", $")
+			sqlBuilder.WriteString(strconv.Itoa(count+2))
+			sqlBuilder.WriteString(", $")
+			sqlBuilder.WriteString(strconv.Itoa(count+3))
+			sqlBuilder.WriteString(", $")
+			sqlBuilder.WriteString(strconv.Itoa(count+4))
+			sqlBuilder.WriteString(")")
+
+			count += 5
+
+			// Store raw bytes of addresses
+			args = append(
+				args, 
+				element.TokenAddress,
+				element.OwnerAddress,
+				element.Amount.String(),
+				element.LastBlockNumberUpdated,
+				element.LastLogIndexUpdated,
+			)
 		}
 
-		sqlBuilder.WriteString("($")
-		sqlBuilder.WriteString(strconv.Itoa(count))
-		sqlBuilder.WriteString(", $")
-		sqlBuilder.WriteString(strconv.Itoa(count+1))
-		sqlBuilder.WriteString(", $")
-		sqlBuilder.WriteString(strconv.Itoa(count+2))
-		sqlBuilder.WriteString(", $")
-		sqlBuilder.WriteString(strconv.Itoa(count+3))
-		sqlBuilder.WriteString(", $")
-		sqlBuilder.WriteString(strconv.Itoa(count+4))
-		sqlBuilder.WriteString(")")
+		sqlBuilder.WriteString(`
+			ON CONFLICT (TOKEN_ADDRESS, OWNER_ADDRESS) DO UPDATE SET 
+				AMOUNT = EXCLUDED.AMOUNT,
+				LAST_BLOCK_NUMBER_UPDATED = EXCLUDED.LAST_BLOCK_NUMBER_UPDATED,
+				LAST_LOG_INDEX_UPDATED = EXCLUDED.LAST_LOG_INDEX_UPDATED
+			RETURNING ID`)
 
-		count += 5
+		sql := sqlBuilder.String()
+		log.Debug().Msgf("sql: %s", sql)
 
-		// Store raw bytes of addresses
-		args = append(
-			args, 
-			element.TokenAddress,
-			element.OwnerAddress,
-			element.Amount.String(),
-			element.LastBlockNumberUpdated,
-			element.LastLogIndexUpdated,
-		)
+		// Prepare the insert statement
+		_, err := db.Exec(sql, args...)
+		
+		if err != nil {
+			log.Error().Err(err).Msg("Error executing batch insert")
+			panic(err)
+		}
+
 	}
 
-	sqlBuilder.WriteString(`
-		ON CONFLICT (TOKEN_ADDRESS, OWNER_ADDRESS) DO UPDATE SET 
-			AMOUNT = EXCLUDED.AMOUNT,
-			LAST_BLOCK_NUMBER_UPDATED = EXCLUDED.LAST_BLOCK_NUMBER_UPDATED,
-			LAST_LOG_INDEX_UPDATED = EXCLUDED.LAST_LOG_INDEX_UPDATED
-		RETURNING ID`)
-
-	sql := sqlBuilder.String()
-	log.Debug().Msgf("sql: %s", sql)
-
-	// Prepare the insert statement
-	result, err := db.Exec(sql, args...)
-	
-	if err != nil {
-		log.Error().Err(err).Msg("Error executing batch insert")
-		return 0, err
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
-
-	return rowsAffected, nil
+	return nil
 }
 
 func GetLargestLastBlockNumberUpdated() (uint64, error) {

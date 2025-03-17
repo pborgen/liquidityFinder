@@ -61,7 +61,6 @@ func Start() {
 				contractAddress := modelTransferEvent.ContractAddress
 				amount := modelTransferEvent.EventValue
 
-				log.Info().Msgf("EventValue: %s", amount.String())
 				// Subtract the amount from the from address
 				modelTokenAmountFrom := modelTokenAmounts[contractAddress][fromAddress]
 				modelTokenAmountFrom.Amount = modelTokenAmountFrom.Amount.Sub(modelTokenAmountFrom.Amount, amount)
@@ -93,7 +92,9 @@ func Start() {
 				}
 			}
 
-			_, err = BatchInsertOrUpdate(tokenAmounts)
+			err = BatchInsertOrUpdate(tokenAmounts)
+			log.Info().Msgf("Inserted %d token amounts", len(tokenAmounts))
+			
 			if err != nil {
 				panic(err)
 			}

@@ -18,7 +18,7 @@ func GetLargestLastBlockNumberUpdated() (uint64, error) {
 	return largestLastBlockNumberUpdated, nil
 }
 
-func BatchInsertOrUpdate(tokenAmounts []types.ModelTokenAmount) (int64, error) {
+func BatchInsertOrUpdate(tokenAmounts []types.ModelTokenAmount) (error) {
 	return token_amount_model.BatchInsertOrUpdate(tokenAmounts)
 }
 
