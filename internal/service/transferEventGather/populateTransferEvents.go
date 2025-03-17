@@ -42,7 +42,7 @@ func Start() {
 		panic(err)
 	}
 
-	maxAmountOfBlocksToProcess := uint64(100)
+	maxAmountOfBlocksToProcess := uint64(50)
 	largestBlockNumber, err := transferEventService.GetLargestBlockNumber()
 	if err != nil {
 		panic(err)
