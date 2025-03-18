@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"math/big"
 
@@ -70,8 +71,10 @@ func Start() {
 		toBlock = fromBlock + maxAmountOfBlocksToProcess
 	}
 
-
+	
 	for {
+		start := time.Now()
+
 		// Check if context is done before processing
 		if ctx.Err() != nil {
 			log.Info().Msg("Shutting down transfer event gatherer...")
@@ -133,7 +136,10 @@ func Start() {
 			} else {
 				toBlock = fromBlock + maxAmountOfBlocksToProcess
 			}
-			log.Debug().Msgf("Processed block range: %d - %d", fromBlock, toBlock)
+
+			blocksPerSecond := float64(toBlock - fromBlock) / time.Since(start).Seconds()
+
+			log.Debug().Msgf("Processed block range: %d - %d, %.2f blocks/sec", fromBlock, toBlock, blocksPerSecond)
 		}
 	}
 }
