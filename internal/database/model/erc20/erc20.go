@@ -258,7 +258,7 @@ func scan(rows orm.Scannable) (*ModelERC20, error) {
 	erc20 := ModelERC20{}
 
 	var contractAddressTemp string
-	err := rows.Scan(&erc20.Erc20Id, &erc20.NetworkId, &contractAddressTemp, &erc20.Name, &erc20.Symbol, &erc20.Decimal, &erc20.ShouldFindArb, &erc20.IsValidated, &erc20.IsTaxToken, &erc20.TaxPercentage, &erc20.ProcessedIsTaxToken)
+	err := rows.Scan(&erc20.Erc20Id, &erc20.NetworkId, &contractAddressTemp, &erc20.Name, &erc20.Symbol, &erc20.Decimal, &erc20.ShouldFindArb, &erc20.IsValidated, &erc20.IsTaxToken, &erc20.TaxPercentage, &erc20.ProcessedIsTaxToken, &erc20.SymbolImageUrl)
 	if err != nil {
 		return &ModelERC20{}, err
 	}
