@@ -37,6 +37,8 @@ type MyConfig struct {
 
     MoralisApiKey string
     MoralisBaseUrl string
+
+    TransferEventGatherBatchSize int
 }
 
 var instance *MyConfig
@@ -102,6 +104,8 @@ func (c *MyConfig) load(envFile string) (*MyConfig, error) {
     config.MoralisApiKey = getEnvString("MORALIS_API_KEY", "")
     config.MoralisBaseUrl = getEnvString("MORALIS_BASE_URL", "")
 
+    config.TransferEventGatherBatchSize = getEnvInt("TRANSFER_EVENT_GATHER_BATCH_SIZE", 10)
+
     return config, nil
 }
 
@@ -130,6 +134,10 @@ func (c *MyConfig) GetMoralisApiKey() string {
 
 func (c *MyConfig) GetMoralisBaseUrl() string {
     return os.Getenv("MORALIS_BASE_URL")
+}
+
+func (c *MyConfig) GetTransferEventGatherBatchSize() int {
+    return c.TransferEventGatherBatchSize
 }
 
 

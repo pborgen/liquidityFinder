@@ -65,6 +65,19 @@ services:
         max-size: "10m"
     command: /app/cmd/start processTokenAmounts
 
+  gatherPairs:
+    container_name: gatherPairs
+    image: registry.digitalocean.com/hexlive/liquidity-finder:latest
+    restart: unless-stopped
+    volumes:
+      - /opt/.env:/opt/.env
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    logging:
+      options:
+        max-size: "10m"
+    command: /app/cmd/start gatherPairs
+
   dragonfly:
     image: docker.dragonflydb.io/dragonflydb/dragonfly
     container_name: dragonfly
@@ -78,6 +91,7 @@ services:
       --maxmemory 2g
       --dir /data
       --snapshot_cron "0 1 * * *"
+      --requirepass ${DRAGONFLY_PASSWORD}
     restart: unless-stopped
     networks:
       - caddy
@@ -100,7 +114,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /root/.docker/config.json:/config.json
-    command: --include-stopped --interval 30 -v populateTransferEvents processTokenAmounts
+    command: --include-stopped --interval 30 -v populateTransferEvents processTokenAmounts gatherPairs
     restart: unless-stopped
     logging:
       options:

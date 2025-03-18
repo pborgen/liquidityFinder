@@ -10,6 +10,7 @@ import (
 
 	blockchainclient "github.com/pborgen/liquidityFinder/internal/blockchain/blockchainClient"
 	blockchainutil "github.com/pborgen/liquidityFinder/internal/blockchain/blockchainutil"
+	"github.com/pborgen/liquidityFinder/internal/myConfig"
 	"github.com/pborgen/liquidityFinder/internal/service/transferEventService"
 	"github.com/pborgen/liquidityFinder/internal/types"
 	"github.com/rs/zerolog/log"
@@ -17,6 +18,7 @@ import (
 
 // @param map[common.Address]bool - a map of pairs that we are monitoring
 // @param bool - if true, we will only monitor the pairs in the map
+var BATCH_SIZE = myConfig.GetInstance().GetTransferEventGatherBatchSize()
 
 func Start() {
 
@@ -42,7 +44,7 @@ func Start() {
 		panic(err)
 	}
 
-	maxAmountOfBlocksToProcess := uint64(100)
+	maxAmountOfBlocksToProcess := uint64(BATCH_SIZE)
 	largestBlockNumber, err := transferEventService.GetLargestBlockNumber()
 	if err != nil {
 		panic(err)
