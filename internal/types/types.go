@@ -21,9 +21,9 @@ type ModelPair struct {
 	Token1Erc20Id       	int           		`postgres.Table:"TOKEN1_ID" json:"token1_erc20_id"`
 	Token0Address      		common.Address 		`postgres.Table:"TOKEN0_ADDRESS" json:"token0_address"`
 	Token1Address      		common.Address 		`postgres.Table:"TOKEN1_ADDRESS" json:"token1_address"`
-	Token0Erc20         	erc20.ModelERC20
-	Token1Erc20         	erc20.ModelERC20
-	ModelDex            	dex.ModelDex
+	Token0Erc20         	erc20.ModelERC20	`json:"token0_erc20"`
+	Token1Erc20         	erc20.ModelERC20	`json:"token1_erc20"`
+	ModelDex            	dex.ModelDex		`json:"model_dex"`
 	Token0Reserves      	big.Int 			`postgres.Table:"TOKEN0_RESERVES" json:"token0_reserves"`
 	Token1Reserves      	big.Int 			`postgres.Table:"TOKEN1_RESERVES" json:"token1_reserves"`
 	ShouldFindArb       	bool    			`postgres.Table:"SHOULD_FIND_ARB" json:"should_find_arb"`

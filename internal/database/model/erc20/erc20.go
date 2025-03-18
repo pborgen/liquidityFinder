@@ -1,6 +1,7 @@
 package erc20
 
 import (
+	"database/sql"
 	"fmt"
 	"unicode"
 
@@ -17,18 +18,18 @@ import (
 )
 
 type ModelERC20 struct {
-	Erc20Id         int            `postgres.Table:"ERC20_ID"`
-	NetworkId       int            `postgres.Table:"NETWORK_ID"`
-	ContractAddress common.Address `postgres.Table:"CONTRACT_ADDRESS"`
-	Name            string         `postgres.Table:"NAME"`
-	Symbol          string         `postgres.Table:"SYMBOL"`
-	Decimal         uint8          `postgres.Table:"DECIMAL"`
-	ShouldFindArb   bool           `postgres.Table:"SHOULD_FIND_ARB"`
-	IsValidated     bool           `postgres.Table:"IS_VALIDATED"`
-	IsTaxToken      bool           `postgres.Table:"IS_TAX_TOKEN"`
-	TaxPercentage   float64        `postgres.Table:"TAX_PERCENTAGE"`
-	ProcessedIsTaxToken bool       `postgres.Table:"PROCESSED_IS_TAX_TOKEN"`
-	SymbolImageUrl  string         `postgres.Table:"SYMBOL_IMAGE_URL"`
+	Erc20Id         int            `postgres.Table:"ERC20_ID" json:"erc20_id"`
+	NetworkId       int            `postgres.Table:"NETWORK_ID" json:"network_id"`
+	ContractAddress common.Address `postgres.Table:"CONTRACT_ADDRESS" json:"contract_address"`
+	Name            string         `postgres.Table:"NAME" json:"name"`
+	Symbol          string         `postgres.Table:"SYMBOL" json:"symbol"`
+	Decimal         uint8          `postgres.Table:"DECIMAL" json:"decimal"`
+	ShouldFindArb   bool           `postgres.Table:"SHOULD_FIND_ARB" json:"should_find_arb"`
+	IsValidated     bool           `postgres.Table:"IS_VALIDATED" json:"is_validated"`
+	IsTaxToken      bool           `postgres.Table:"IS_TAX_TOKEN" json:"is_tax_token"`
+	TaxPercentage   float64        `postgres.Table:"TAX_PERCENTAGE" json:"tax_percentage"`
+	ProcessedIsTaxToken bool       `postgres.Table:"PROCESSED_IS_TAX_TOKEN" json:"processed_is_tax_token"`
+	SymbolImageUrl  string `postgres.Table:"SYMBOL_IMAGE_URL" json:"symbol_image_url"`
 }
 
 const primaryKey = "ERC20_ID"
@@ -258,13 +259,30 @@ func scan(rows orm.Scannable) (*ModelERC20, error) {
 	erc20 := ModelERC20{}
 
 	var contractAddressTemp string
-	err := rows.Scan(&erc20.Erc20Id, &erc20.NetworkId, &contractAddressTemp, &erc20.Name, &erc20.Symbol, &erc20.Decimal, &erc20.ShouldFindArb, &erc20.IsValidated, &erc20.IsTaxToken, &erc20.TaxPercentage, &erc20.ProcessedIsTaxToken, &erc20.SymbolImageUrl)
+	var symbolImageUrlTemp sql.NullString
+	err := rows.Scan(
+		&erc20.Erc20Id, 
+		&erc20.NetworkId, 
+		&contractAddressTemp, 
+		&erc20.Name, 
+		&erc20.Symbol, 
+		&erc20.Decimal, 
+		&erc20.ShouldFindArb, 
+		&erc20.IsValidated, 
+		&erc20.IsTaxToken, 
+		&erc20.TaxPercentage, 
+		&erc20.ProcessedIsTaxToken, 
+		&symbolImageUrlTemp)
 	if err != nil {
 		return &ModelERC20{}, err
 	}
 
 	erc20.ContractAddress = common.HexToAddress(contractAddressTemp)
-
+	if symbolImageUrlTemp.Valid {
+		erc20.SymbolImageUrl = symbolImageUrlTemp.String
+	} else {
+		erc20.SymbolImageUrl = ""
+	}
 	return &erc20, nil
 }
 

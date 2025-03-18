@@ -39,6 +39,8 @@ type MyConfig struct {
     MoralisBaseUrl string
 
     TransferEventGatherBatchSize int
+
+    SeedPw string
 }
 
 var instance *MyConfig
