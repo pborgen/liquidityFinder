@@ -278,28 +278,19 @@ func BatchInsertOrUpdate(transferEvents []types.ModelTransferEvent) ([]int, erro
 func GetLargestBlockNumber() (uint64, error) {
 	db := database.GetDBConnection()
 
-	count, err := GetCount()
-	if err != nil {
-		return 0, err
-	}
-
-	if count == 0 {
-		return 0, nil
-	}
-
 	rows := db.QueryRow("SELECT MAX(BLOCK_NUMBER) FROM " + tableName)
 
 	if rows == nil {
-		return 0, errors.New("could not find smallest block number")
+		return 0, errors.New("could not find largest block number")
 	}
 
-	var smallestBlockNumber uint64
-	err = rows.Scan(&smallestBlockNumber)
+	var largestBlockNumber uint64
+	err := rows.Scan(&largestBlockNumber)
 	if err != nil {
 		return 0, err
 	}
 
-	return smallestBlockNumber, nil
+	return largestBlockNumber, nil
 }
 
 func GetSmallestBlockNumber() (uint64, error) {

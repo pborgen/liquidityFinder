@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/pborgen/liquidityFinder/internal/database"
 	"github.com/pborgen/liquidityFinder/internal/database/model/orm"
+	"github.com/pborgen/liquidityFinder/internal/myConfig"
 	"github.com/pborgen/liquidityFinder/internal/myUtil"
 	"github.com/rs/zerolog/log"
 
@@ -31,6 +32,7 @@ import (
 const primaryKey = "ID"
 const tableName = "TOKEN_AMOUNT"
 
+var tokenAmountModelInsertBatchSize = myConfig.GetInstance().TokenAmountModelInsertBatchSize
 var tokenAmountColumnNames = orm.GetColumnNames(types.ModelTokenAmount{})
 
 func init() {
@@ -42,10 +44,9 @@ func BatchInsertOrUpdate(tokenAmounts []types.ModelTokenAmount) (error) {
 		return nil
 	}
 
-	const batchSize = 4000
 
-	for i := 0; i < len(tokenAmounts); i += batchSize {
-		end := i + batchSize
+	for i := 0; i < len(tokenAmounts); i += tokenAmountModelInsertBatchSize {
+		end := i + tokenAmountModelInsertBatchSize
 		if end > len(tokenAmounts) {
 			end = len(tokenAmounts)
 		}
@@ -220,8 +221,7 @@ func GetByContractAddressAndOwner(contractAddressList []common.Address, ownerLis
 	}
 
 	sql := sqlBuilder.String()
-	log.Info().Msgf("sql: %s", sql)
-	
+
 	// Execute query with byte arrays
 	rows, err := db.Query(sql, pq.Array(contractAddressBytes), pq.Array(ownerAddressBytes))
 	if err != nil {

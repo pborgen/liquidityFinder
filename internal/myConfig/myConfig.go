@@ -39,7 +39,8 @@ type MyConfig struct {
     MoralisBaseUrl string
 
     TransferEventGatherBatchSize int
-
+    TokenAmountModelInsertBatchSize int
+    TokenAmountServiceBatchSize uint64
     SeedPw string
 }
 
@@ -108,7 +109,8 @@ func (c *MyConfig) load(envFile string) (*MyConfig, error) {
     config.MoralisBaseUrl = getEnvString("MORALIS_BASE_URL", "")
 
     config.TransferEventGatherBatchSize = getEnvInt("TRANSFER_EVENT_GATHER_BATCH_SIZE", 10)
-
+    config.TokenAmountModelInsertBatchSize = getEnvInt("TOKEN_AMOUNT_MODEL_INSERT_BATCH_SIZE", 1000)
+    config.TokenAmountServiceBatchSize = getEnvUint64("TOKEN_AMOUNT_SERVICE_BATCH_SIZE", 1000)
     return config, nil
 }
 
@@ -165,6 +167,15 @@ func getEnvInt64(key string, defaultValue int64) int64 {
     if value, exists := os.LookupEnv(key); exists {
         if intValue, err := strconv.ParseInt(value, 10, 64); err == nil {
             return intValue
+        }
+    }
+    return defaultValue
+}
+
+func getEnvUint64(key string, defaultValue uint64) uint64 {
+    if value, exists := os.LookupEnv(key); exists {
+        if uintValue, err := strconv.ParseUint(value, 10, 64); err == nil {
+            return uintValue
         }
     }
     return defaultValue

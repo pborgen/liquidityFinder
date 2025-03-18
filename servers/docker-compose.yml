@@ -19,6 +19,25 @@ services:
       -c work_mem=1GB
       -c effective_cache_size=8GB
       -c maintenance_work_mem=1GB
+      -c checkpoint_timeout=15min
+      -c wal_buffers=16MB
+      -c max_parallel_workers_per_gather=4
+      -c max_parallel_workers=6
+      -c random_page_cost=1.1 -c seq_page_cost=1.0
+      -c min_wal_size=1GB 
+      -c max_wal_size=4GB
+      -c shared_preload_libraries=pg_prewarm
+
+
+
+
+
+
+
+
+
+
+
     restart: unless-stopped
     networks:
       - caddy

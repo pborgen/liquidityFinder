@@ -2,14 +2,17 @@ package tokenAmountService
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pborgen/liquidityFinder/internal/myConfig"
 	"github.com/pborgen/liquidityFinder/internal/service/transferEventService"
 	"github.com/pborgen/liquidityFinder/internal/types"
 	"github.com/rs/zerolog/log"
 )
 
-const MAX_AMOUNT_OF_BLOCKS_TO_PROCESS = 100
+var tokenAmountServiceBatchSize = myConfig.GetInstance().TokenAmountServiceBatchSize
+
 
 func Start() {
 
@@ -26,10 +29,10 @@ func Start() {
 	// Special case for the first run
 	if largestTokenAmountBlockNumberUpdated == 0 {
 		fromBlockNumber = 460000
-		toBlockNumber = fromBlockNumber + MAX_AMOUNT_OF_BLOCKS_TO_PROCESS
+		toBlockNumber = fromBlockNumber + tokenAmountServiceBatchSize
 	} else {
-		fromBlockNumber = largestTokenAmountBlockNumberUpdated - MAX_AMOUNT_OF_BLOCKS_TO_PROCESS
-		toBlockNumber = fromBlockNumber + MAX_AMOUNT_OF_BLOCKS_TO_PROCESS
+		fromBlockNumber = largestTokenAmountBlockNumberUpdated - tokenAmountServiceBatchSize
+		toBlockNumber = fromBlockNumber + tokenAmountServiceBatchSize
 
 		fromBlockNumber, toBlockNumber = 
 			calculateNextFromAndToBlockNumbers(
@@ -39,6 +42,8 @@ func Start() {
 	}
 
 	for {
+		startTime := time.Now()
+		
 		log.Info().Msgf("Processing block range: %d - %d", fromBlockNumber, toBlockNumber)
 		modelTransferEventList, err := transferEventService.GetEventsForBlockRangeOrdered(fromBlockNumber, toBlockNumber)
 
@@ -91,13 +96,15 @@ func Start() {
 					tokenAmounts = append(tokenAmounts, *modelTokenAmount)
 				}
 			}
-
+			startTimeBatchInsert := time.Now()
 			err = BatchInsertOrUpdate(tokenAmounts)
 			log.Info().Msgf("Inserted %d token amounts", len(tokenAmounts))
 			
 			if err != nil {
 				panic(err)
 			}
+			durationBatchInsert := time.Since(startTimeBatchInsert).Seconds()
+			log.Info().Msgf("Time taken to BatchInsertOrUpdate: %f seconds", durationBatchInsert)
 		}
 
 		fromBlockNumberTemp, toBlockNumberTemp := 
@@ -105,7 +112,7 @@ func Start() {
 				fromBlockNumber, 
 				toBlockNumber,
 			)
-
+	
 		if fromBlockNumberTemp == fromBlockNumber && toBlockNumberTemp == toBlockNumber {
 			log.Info().Msgf("Reached the largest transfer event block number.")
 			break
@@ -113,7 +120,14 @@ func Start() {
 			fromBlockNumber = fromBlockNumberTemp
 			toBlockNumber = toBlockNumberTemp
 		}
+
+		duration := time.Since(startTime).Seconds()
 		
+		blocksPerSecond := float64(toBlockNumber - fromBlockNumber) / duration
+		log.Info().Msgf(
+			"Time taken to process block range: %d - %d: %f blocks/sec with a total time of %f seconds", 
+			fromBlockNumber, toBlockNumber, blocksPerSecond, duration,
+		)
 	}
 }
 
@@ -182,12 +196,12 @@ func calculateNextFromAndToBlockNumbers(fromBlockNumber uint64, toBlockNumber ui
 
 	maxBlockNumberInTransferEventTable, err := transferEventService.GetLargestBlockNumber()
 
-	if err != nil {
+ 	if err != nil {
 		panic(err)
 	}
 
 	nextFromBlockNumber = toBlockNumber + 1
-	nextToBlockNumber = nextFromBlockNumber + MAX_AMOUNT_OF_BLOCKS_TO_PROCESS
+	nextToBlockNumber = nextFromBlockNumber + tokenAmountServiceBatchSize
 
 	if nextFromBlockNumber > maxBlockNumberInTransferEventTable {
 		nextFromBlockNumber = maxBlockNumberInTransferEventTable
