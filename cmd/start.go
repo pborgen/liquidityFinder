@@ -17,6 +17,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/pborgen/liquidityFinder/internal/service/pairServiceV3"
+	"github.com/pborgen/liquidityFinder/cmd/updateSymbol"
 )
 
 func main() {
@@ -79,7 +80,8 @@ func main() {
 		dexpairgather.WriteToFilePlsPairsByDexId([]int{3, 4})
 	} else if processName == "fixPairOrdering" {
 		pairService.FixPairOrdering()
-	
+	} else if processName == "updateSymbol" {
+		updateSymbol.Start()
 	} else if processName == "detectTaxToken" {
 		for {
 			detector, err := taxTokenDetector.NewTaxDetector()

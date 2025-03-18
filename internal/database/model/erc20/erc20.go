@@ -28,6 +28,7 @@ type ModelERC20 struct {
 	IsTaxToken      bool           `postgres.Table:"IS_TAX_TOKEN"`
 	TaxPercentage   float64        `postgres.Table:"TAX_PERCENTAGE"`
 	ProcessedIsTaxToken bool       `postgres.Table:"PROCESSED_IS_TAX_TOKEN"`
+	SymbolImageUrl  string         `postgres.Table:"SYMBOL_IMAGE_URL"`
 }
 
 const primaryKey = "ERC20_ID"
@@ -72,12 +73,24 @@ func Insert(erc20Model ModelERC20) (ModelERC20, error) {
 		erc20Model.IsTaxToken,
 		erc20Model.TaxPercentage,
 		erc20Model.ProcessedIsTaxToken,
+		erc20Model.SymbolImageUrl,
 	).Scan(&id)
 	if err == nil {
 		returnValue = GetById(id)
 	}
 
 	return returnValue, err
+}
+
+func UpdateSymbolImageUrl(contractAddress common.Address, symbolImageUrl string) (error) {
+	db := database.GetDBConnection()
+	sqlStatement := `
+	UPDATE ERC20 
+	SET SYMBOL_IMAGE_URL=$2
+	WHERE CONTRACT_ADDRESS=$1
+	`
+	_, err := db.Exec(sqlStatement, contractAddress.String(), symbolImageUrl)
+	return err
 }
 
 func GetRandom() []ModelERC20 {
@@ -261,6 +274,7 @@ func ToString(modelErc20 ModelERC20) string {
 	returnValue = returnValue + fmt.Sprintf("ContractAddress: %s ", modelErc20.ContractAddress.String())
 	returnValue = returnValue + fmt.Sprintf("Name: %s ", modelErc20.Name)
 	returnValue = returnValue + fmt.Sprintf("Symbol: %s ", modelErc20.Symbol)
+	returnValue = returnValue + fmt.Sprintf("SymbolImageUrl: %s ", modelErc20.SymbolImageUrl)
 	returnValue = returnValue + fmt.Sprintf("Decimal: %d ", modelErc20.Decimal)
 	returnValue = returnValue + fmt.Sprintf("ShouldFindArb: %t ", modelErc20.ShouldFindArb)
 	returnValue = returnValue + fmt.Sprintf("IsValidated: %t ", modelErc20.IsValidated)

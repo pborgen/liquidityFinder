@@ -85,6 +85,7 @@ func (c *MyConfig) load(envFile string) (*MyConfig, error) {
 
     config := &MyConfig{}
 
+    config.BaseDir = getEnvString("BASE_DIR", "")
     // Cache configuration
     config.CacheHost = getEnvString("CACHE_HOST", "localhost")
     config.CachePort = getEnvInt("CACHE_PORT", 6379)

@@ -1,4 +1,13 @@
 {
+  "go.useLanguageServer": true,
+  "editor.suggestSelection": "first",
+  "editor.snippets": {
+    "log": {
+      "prefix": "log",
+      "body": "\"github.com/rs/zerolog/log\"",
+      "description": "Import zerolog"
+    }
+  },
   "cSpell.words": [
     "approvee",
     "blockchainclient",

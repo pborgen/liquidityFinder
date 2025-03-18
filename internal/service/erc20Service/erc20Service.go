@@ -16,6 +16,9 @@ func BalanceOf(
 	return erc20Helper.BalanceOf(contractAddress, owner)
 }
 
+func UpdateSymbolImageUrl(contractAddress common.Address, symbolImageUrl string) (error) {
+	return erc20.UpdateSymbolImageUrl(contractAddress, symbolImageUrl)
+}
 
 
 func GetByContractAddress(contractAddress common.Address, networkId int) (erc20.ModelERC20, error) {
@@ -34,6 +37,7 @@ func GetByContractAddress(contractAddress common.Address, networkId int) (erc20.
 				NetworkId:       networkId,
 				Name:            erc20Token0Info.Name,
 				Symbol:          erc20Token0Info.Symbol,
+				SymbolImageUrl:  "",
 				ContractAddress: contractAddress,
 				Decimal:         erc20Token0Info.Decimal,
 				ShouldFindArb:   false,
