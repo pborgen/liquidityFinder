@@ -15,6 +15,10 @@ services:
       - /root/dev/caddy/certs/server.key:/var/lib/postgresql/data/server.key
     command: >
       -c ssl=on
+      -c shared_buffers=4GB
+      -c work_mem=1GB
+      -c effective_cache_size=8GB
+      -c maintenance_work_mem=1GB
     restart: unless-stopped
     networks:
       - caddy
@@ -88,7 +92,7 @@ services:
     volumes:
       - /root/dev/caddy/dragonfly-data:/data
     command: >
-      --maxmemory 2g
+      --maxmemory 1g
       --dir /data
       --snapshot_cron "0 1 * * *"
       --requirepass ${DRAGONFLY_PASSWORD}
