@@ -66,7 +66,6 @@ func BatchInsertOrUpdate(tokenAmounts []types.ModelTokenAmount) (error) {
 				continue
 			}
 
-			log.Info().Msgf("element:  %s",  element.Amount.String())
 			if count > 1 {
 				sqlBuilder.WriteString(",")
 			}
@@ -104,7 +103,6 @@ func BatchInsertOrUpdate(tokenAmounts []types.ModelTokenAmount) (error) {
 			RETURNING ID`)
 
 		sql := sqlBuilder.String()
-		log.Debug().Msgf("sql: %s", sql)
 
 		// Prepare the insert statement
 		_, err := db.Exec(sql, args...)
