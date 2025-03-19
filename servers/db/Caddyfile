@@ -1,0 +1,9 @@
+db01.hexlive.net {
+    reverse_proxy localhost:5432  # Direct to PostgreSQL (not typical for HTTP)
+}
+
+monitor.hexlive.net {
+    reverse_proxy portainer:9000
+    encode gzip
+    log
+}

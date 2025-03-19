@@ -1,0 +1,3 @@
+cache.hexlive.net {
+    reverse_proxy dragonfly:6379
+}
