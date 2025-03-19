@@ -99,6 +99,7 @@ func Start() {
 
 		if err != nil {
 			log.Error().Msgf("Error getting transfers for block range. Retrying... %d, %d, %v", fromBlock, toBlock, err)
+			time.Sleep(20 * time.Second)
 			continue
 		}
 

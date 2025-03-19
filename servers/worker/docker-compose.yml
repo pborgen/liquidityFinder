@@ -82,6 +82,8 @@ services:
     image: portainer/portainer-ce:latest
     container_name: portainer
     restart: unless-stopped
+    environment:
+      - AGENT_SECRET=${PORTAINER_AGENT_SECRET}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data

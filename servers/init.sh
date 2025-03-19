@@ -6,6 +6,8 @@ echo \
 apt-get update
 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
+docker network create caddy
+
 apt-get install -y postgresql-client-16
 apt-get install -y curl ca-certificates
 install -d /usr/share/postgresql-common/pgdg
