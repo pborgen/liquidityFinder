@@ -27,12 +27,17 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_SSL_CERT_FILE: /var/lib/postgresql/server.crt
+      POSTGRES_SSL_KEY_FILE: /var/lib/postgresql/server.key
     ports:
       - "5432:5432"
     volumes:
       - ${DB_DATA_DIR}:/var/lib/postgresql/data
+      - /root/dev/caddy/certs:/var/lib/postgresql/certs
     command: >
-      -c ssl=off
+      -c ssl=on
+      -c ssl_cert_file=/var/lib/postgresql/certs/server.crt
+      -c ssl_key_file=/var/lib/postgresql/certs/server.key
       -c shared_buffers=4GB
       -c work_mem=32MB
       -c effective_cache_size=8GB

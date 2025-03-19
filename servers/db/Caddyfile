@@ -1,5 +1,5 @@
 db01.hexlive.net {
-    reverse_proxy localhost:5432  # Direct to PostgreSQL (not typical for HTTP)
+    reverse_proxy postgres:5432  # Direct to PostgreSQL (not typical for HTTP)
 }
 
 monitor.hexlive.net {

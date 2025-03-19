@@ -6,7 +6,10 @@ echo \
 apt-get update
 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
+# Postgres SSL setup
 mkdir -p /root/dev/caddy/certs
 openssl req -x509 -newkey rsa:4096 -keyout /root/dev/caddy/certs/server.key -out /root/dev/caddy/certs/server.crt -days 365 -nodes -subj "/CN=postgres"
 chmod 600 /root/dev/caddy/certs/server.key
 chmod 644 /root/dev/caddy/certs/server.crt
+chown 999 /root/dev/caddy/certs/server.key
+chown 999 /root/dev/caddy/certs/server.crt
