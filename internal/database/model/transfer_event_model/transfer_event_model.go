@@ -275,6 +275,20 @@ func BatchInsertOrUpdate(transferEvents []types.ModelTransferEvent) ([]int, erro
 	return nil, nil
 }
 
+func DoAnyRowsExists() (bool, error) {
+	db := database.GetDBConnection()
+
+	rows := db.QueryRow("SELECT EXISTS (SELECT 1 FROM " + tableName + " LIMIT 1)")
+	
+	var exists bool
+	err := rows.Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 func GetLargestBlockNumber() (uint64, error) {
 	db := database.GetDBConnection()
 

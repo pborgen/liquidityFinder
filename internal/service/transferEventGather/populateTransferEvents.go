@@ -46,12 +46,24 @@ func Start() {
 	}
 
 	maxAmountOfBlocksToProcess := uint64(BATCH_SIZE)
-	largestBlockNumber, err := transferEventService.GetLargestBlockNumber()
+
+	doAnyRowsExist, err := transferEventService.DoAnyRowsExists()
 	if err != nil {
 		panic(err)
 	}
 
 	var fromBlock uint64 = 0
+	var largestBlockNumber uint64 = 0
+
+	if doAnyRowsExist {
+		largestBlockNumber, err = transferEventService.GetLargestBlockNumber()
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		largestBlockNumber = 0
+	}
+
 
 	if largestBlockNumber > maxAmountOfBlocksToProcess {
 		fromBlock = largestBlockNumber - (maxAmountOfBlocksToProcess + 1)

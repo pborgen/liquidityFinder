@@ -24,6 +24,10 @@ func GetSmallestBlockNumber() (uint64, error) {
 	return transfer_event_model.GetSmallestBlockNumber()
 }
 
+func DoAnyRowsExists() (bool, error) {
+	return transfer_event_model.DoAnyRowsExists()
+}
+
 func GetLargestBlockNumber() (uint64, error) {
 	return transfer_event_model.GetLargestBlockNumber()
 }
