@@ -34,6 +34,7 @@ services:
     volumes:
       - ${DB_DATA_DIR}:/var/lib/postgresql/data
       - /root/dev/caddy/certs:/var/lib/postgresql/certs
+      - ${PWD}/pg_hba.conf:/var/lib/postgresql/data/pg_hba.conf
     command: >
       -c ssl=on
       -c ssl_cert_file=/var/lib/postgresql/certs/server.crt

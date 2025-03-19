@@ -6,6 +6,14 @@ echo \
 apt-get update
 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
+apt-get install -y postgresql-client-16
+apt-get install -y curl ca-certificates
+install -d /usr/share/postgresql-common/pgdg
+curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
+
+# Create the repository configuration file:
+sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+
 # Postgres SSL setup
 mkdir -p /root/dev/caddy/certs
 openssl req -x509 -newkey rsa:4096 -keyout /root/dev/caddy/certs/server.key -out /root/dev/caddy/certs/server.crt -days 365 -nodes -subj "/CN=postgres"
