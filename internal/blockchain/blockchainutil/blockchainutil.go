@@ -147,7 +147,7 @@ func GetTransactionResults(opts *bind.TransactOpts, transaction *types.Transacti
 	if isSuccessful {
 		log.Info().Msgf("Transaction successful: %s", receipt.TxHash.String())
 	} else {
-		revertReason, err := myUtil.GetRevertReason(opts.From, transaction)
+		revertReason, err := blockchainclient.GetRevertReason(opts.From, transaction)
 
 		myError := &TransactionError{
 			DidExecuteTransaction:   true,

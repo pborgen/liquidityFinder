@@ -3,7 +3,7 @@ package myEncrypt
 import (
 	"testing"
 
-	"github.com/paulborgen/goLangArb/internal/testhelper"
+	"github.com/pborgen/liquidityFinder/internal/testhelper"
 )
 func TestSetup(t *testing.T) {
 

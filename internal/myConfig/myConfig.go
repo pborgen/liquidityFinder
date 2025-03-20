@@ -35,9 +35,16 @@ type MyConfig struct {
     PostgresDB string
     PostgresSSLMode string
 
+    // Blockchain Client
+    BlockchainClientUrlHttp string
+    BlockchainClientUrlWs string
+
+
+    // Moralis
     MoralisApiKey string
     MoralisBaseUrl string
 
+    // Transfer Event Gather
     TransferEventGatherBatchSize int
     TokenAmountModelInsertBatchSize int
     TokenAmountServiceBatchSize uint64
@@ -105,6 +112,11 @@ func (c *MyConfig) load(envFile string) (*MyConfig, error) {
     config.PostgresDB = getEnvString("POSTGRES_DB", "postgres")
     config.PostgresSSLMode = getEnvString("POSTGRES_SSL_MODE", "disable")
 
+    // Blockchain Client
+    config.BlockchainClientUrlHttp = getEnvString("BLOCKCHAIN_CLIENT_URL_HTTP", "")
+    config.BlockchainClientUrlWs = getEnvString("BLOCKCHAIN_CLIENT_URL_WS", "")
+
+    // Moralis
     config.MoralisApiKey = getEnvString("MORALIS_API_KEY", "")
     config.MoralisBaseUrl = getEnvString("MORALIS_BASE_URL", "")
 
@@ -113,10 +125,6 @@ func (c *MyConfig) load(envFile string) (*MyConfig, error) {
     config.TokenAmountServiceBatchSize = getEnvUint64("TOKEN_AMOUNT_SERVICE_BATCH_SIZE", 1000)
     return config, nil
 }
-
-
-
-
 
 func (c *MyConfig) GetIsDevMode() bool {
     return getEnvBool("IS_DEV", true)
