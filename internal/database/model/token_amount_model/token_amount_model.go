@@ -120,6 +120,8 @@ func BatchInsertOrUpdate(tokenAmounts []types.ModelTokenAmount) (error) {
 
 	}
 
+	log.Info().Msgf("Inserted or Updated %d token amounts", len(tokenAmounts))
+
 	return nil
 }
 
