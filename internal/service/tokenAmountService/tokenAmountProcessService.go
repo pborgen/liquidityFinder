@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pborgen/liquidityFinder/internal/database/model/token_amount_model"
 	"github.com/pborgen/liquidityFinder/internal/myConfig"
 	"github.com/pborgen/liquidityFinder/internal/service/transferEventService"
 	"github.com/pborgen/liquidityFinder/internal/types"
@@ -55,6 +56,7 @@ func Start() {
 		if len(modelTransferEventList) > 0 {
 
 			modelTokenAmounts, err := getModelTokenAmountsFromTransferEvents(modelTransferEventList)
+			log.Debug().Msgf("Gathered transfer events: %d", len(modelTransferEventList))
 
 			if err != nil {
 				panic(err)
@@ -135,24 +137,28 @@ func getModelTokenAmountsFromTransferEvents(
 	modelTransferEventList []types.ModelTransferEvent) (map[common.Address]map[common.Address]*types.ModelTokenAmount, error) {
 
 	// Get the current token balances
-	contractAddressList := make([]common.Address, 0)
-	ownerAddressList := make([]common.Address, 0)
+
 	contractAddressOwnersMap := make(map[common.Address][] common.Address)
 
+	var tokenAddressOwnerAddressList []token_amount_model.TokenAddressOwnerAddress
+	
 	for _, transfer := range modelTransferEventList {
 		contractAddress := transfer.ContractAddress
 		fromAddress := transfer.FromAddress
 		toAddress := transfer.ToAddress
 
-		contractAddressList = append(contractAddressList, contractAddress)
-		ownerAddressList = append(ownerAddressList, fromAddress, toAddress)
+		tokenAddressOwnerAddressList = append(tokenAddressOwnerAddressList, token_amount_model.TokenAddressOwnerAddress{
+			TokenAddress: contractAddress,
+			OwnerAddress: fromAddress,
+		})
+		
 
 		// Used for the initialize
 		contractAddressOwnersMap[contractAddress] = append(contractAddressOwnersMap[contractAddress], fromAddress)
 		contractAddressOwnersMap[contractAddress] = append(contractAddressOwnersMap[contractAddress], toAddress)
 	}
 
-	modelTokenAmounts, err := GetByContractAddressAndOwner(contractAddressList, ownerAddressList)
+	modelTokenAmounts, err := GetByContractAddressAndOwner(tokenAddressOwnerAddressList)
 	
 	if err != nil {
 		return nil, err

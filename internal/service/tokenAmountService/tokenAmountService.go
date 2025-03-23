@@ -22,7 +22,7 @@ func BatchInsertOrUpdate(tokenAmounts []types.ModelTokenAmount) (error) {
 	return token_amount_model.BatchInsertOrUpdate(tokenAmounts)
 }
 
-func GetByContractAddressAndOwner(contractAddressList []common.Address, ownerList []common.Address) (map[common.Address]map[common.Address]*types.ModelTokenAmount, error) {
-	return token_amount_model.GetByContractAddressAndOwner(contractAddressList, ownerList)
+func GetByContractAddressAndOwner(tokenAddressOwnerAddressList []token_amount_model.TokenAddressOwnerAddress) (map[common.Address]map[common.Address]*types.ModelTokenAmount, error) {
+	return token_amount_model.GetByContractAddressAndOwner(tokenAddressOwnerAddressList)
 }
 

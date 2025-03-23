@@ -2,13 +2,13 @@ package token_amount_model
 
 import (
 	"errors"
+	"fmt"
 
 	"math/big"
 	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/lib/pq"
 	"github.com/pborgen/liquidityFinder/internal/database"
 	"github.com/pborgen/liquidityFinder/internal/database/model/orm"
 	"github.com/pborgen/liquidityFinder/internal/myConfig"
@@ -34,6 +34,11 @@ const tableName = "TOKEN_AMOUNT"
 
 var tokenAmountModelInsertBatchSize = myConfig.GetInstance().TokenAmountModelInsertBatchSize
 var tokenAmountColumnNames = orm.GetColumnNames(types.ModelTokenAmount{})
+
+type TokenAddressOwnerAddress struct {
+	TokenAddress common.Address
+	OwnerAddress common.Address
+}
 
 func init() {
 
@@ -193,62 +198,63 @@ func removeEmptyAddresses(addresses []common.Address) []common.Address {
 	return result
 }
 
-func GetByContractAddressAndOwner(contractAddressList []common.Address, ownerList []common.Address) (map[common.Address]map[common.Address]*types.ModelTokenAmount, error) {
-	// Clean input arrays by removing empty addresses
-	contractAddressList = removeEmptyAddresses(contractAddressList)
-	ownerList = removeEmptyAddresses(ownerList)
-
-	if len(contractAddressList) == 0 || len(ownerList) == 0 {
+func GetByContractAddressAndOwner(tokenAddressOwnerAddressList []TokenAddressOwnerAddress) (map[common.Address]map[common.Address]*types.ModelTokenAmount, error) {
+	if len(tokenAddressOwnerAddressList) == 0 {
 		return make(map[common.Address]map[common.Address]*types.ModelTokenAmount), nil
 	}
 
+	// Initialize result map
+	result := make(map[common.Address]map[common.Address]*types.ModelTokenAmount)
+	for _, pair := range tokenAddressOwnerAddressList {
+		result[pair.TokenAddress] = make(map[common.Address]*types.ModelTokenAmount)
+	}
+
+	// Process in batches of 1000 pairs
+	batchSize := 1000
 	db := database.GetDBConnection()
 
-	// Build query with IN clause for both lists
-	var sqlBuilder strings.Builder
-	sqlBuilder.WriteString("SELECT " + tokenAmountColumnNames + " FROM " + tableName + " WHERE TOKEN_ADDRESS = ANY($1) AND OWNER_ADDRESS = ANY($2)")
+	for i := 0; i < len(tokenAddressOwnerAddressList); i += batchSize {
+		end := i + batchSize
+		if end > len(tokenAddressOwnerAddressList) {
+			end = len(tokenAddressOwnerAddressList)
+		}
 
-	// Convert addresses to byte arrays for postgres
-	contractAddressBytes := make([][]byte, len(contractAddressList))
-	ownerAddressBytes := make([][]byte, len(ownerList))
+		// Build query for current batch
+		var sqlBuilder strings.Builder
+		sqlBuilder.WriteString("SELECT " + tokenAmountColumnNames + " FROM " + tableName + 
+			" WHERE (TOKEN_ADDRESS, OWNER_ADDRESS) IN (")
 
-	for i, addr := range contractAddressList {
-		contractAddressBytes[i] = addr.Bytes()
-	}
+		// Build the value list for current batch
+		args := make([]interface{}, 0, (end-i)*2)
+		for j, pair := range tokenAddressOwnerAddressList[i:end] {
+			if j > 0 {
+				sqlBuilder.WriteString(",")
+			}
+			sqlBuilder.WriteString(fmt.Sprintf("($%d,$%d)", j*2+1, j*2+2))
+			args = append(args, pair.TokenAddress.Bytes(), pair.OwnerAddress.Bytes())
+		}
+		sqlBuilder.WriteString(")")
 
-	for i, addr := range ownerList {
-		ownerAddressBytes[i] = addr.Bytes()
-	}
-
-	sql := sqlBuilder.String()
-
-	// Execute query with byte arrays
-	rows, err := db.Query(sql, pq.Array(contractAddressBytes), pq.Array(ownerAddressBytes))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	// Initialize empty map
-	result := make(map[common.Address]map[common.Address]*types.ModelTokenAmount)
-
-	// Pre-initialize inner maps for all contract addresses
-	for _, contractAddr := range contractAddressList {
-		result[contractAddr] = make(map[common.Address]*types.ModelTokenAmount)
-	}
-
-	// Iterate through rows and build the map
-	for rows.Next() {
-		tokenAmount, err := scan(rows)
+		// Execute query for current batch
+		rows, err := db.Query(sqlBuilder.String(), args...)
 		if err != nil {
 			return nil, err
 		}
-		
-		result[tokenAmount.TokenAddress][tokenAmount.OwnerAddress] = tokenAmount
-	}
 
-	if err = rows.Err(); err != nil {
-		return nil, err
+		// Process results
+		for rows.Next() {
+			tokenAmount, err := scan(rows)
+			if err != nil {
+				rows.Close()
+				return nil, err
+			}
+			result[tokenAmount.TokenAddress][tokenAmount.OwnerAddress] = tokenAmount
+		}
+		rows.Close()
+
+		if err = rows.Err(); err != nil {
+			return nil, err
+		}
 	}
 
 	return result, nil
