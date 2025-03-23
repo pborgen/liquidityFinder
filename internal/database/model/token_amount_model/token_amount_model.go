@@ -106,7 +106,7 @@ func BatchInsertOrUpdate(tokenAmounts []types.ModelTokenAmount) (error) {
 				AMOUNT = EXCLUDED.AMOUNT,
 				LAST_BLOCK_NUMBER_UPDATED = EXCLUDED.LAST_BLOCK_NUMBER_UPDATED,
 				LAST_LOG_INDEX_UPDATED = EXCLUDED.LAST_LOG_INDEX_UPDATED
-			RETURNING ID`)
+			`)
 
 		sql := sqlBuilder.String()
 
@@ -268,7 +268,6 @@ func scan(rows orm.Scannable) (*types.ModelTokenAmount, error) {
 	var tempAmount []uint8
 
 	err := rows.Scan(
-		&tokenAmount.Id,
 		&tokenAmount.TokenAddress,
 		&tokenAmount.OwnerAddress,
 		&tempAmount,

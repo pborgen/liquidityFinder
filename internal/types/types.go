@@ -56,7 +56,6 @@ type ModelTransferEvent struct {
 }
 
 type ModelTokenAmount struct {
-	Id int `postgres.Table:"ID"`
 	TokenAddress common.Address `postgres.Table:"TOKEN_ADDRESS"`
 	OwnerAddress common.Address `postgres.Table:"OWNER_ADDRESS"`
 	Amount *big.Int `postgres.Table:"AMOUNT"`
