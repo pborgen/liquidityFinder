@@ -16,7 +16,6 @@ import (
 )
 
 
-const primaryKey = "ID"
 const tableName = "TRANSFER_EVENT"
 
 
@@ -145,51 +144,6 @@ func GetEventsForBlockRangeAsIndexedMap(fromBlock uint64, toBlock uint64) (map[u
 	return events, nil
 }
 
-func Insert(transferEvent types.ModelTransferEvent) (int, error) {
-	db := database.GetDBConnection()
-
-	if !myUtil.IsWithinNumeric78Range(transferEvent.EventValue) {
-		return -1, errors.New("value is out of range")
-	}
-
-	var err error
-
-	exists, err := Exists(transferEvent.BlockNumber, transferEvent.LogIndex)
-	if err != nil {
-		return -1, err
-	}
-
-	if exists {
-		transferEvent, err := GetByBlockNumberAndIndex(transferEvent.BlockNumber, transferEvent.LogIndex)
-		if err != nil {
-			return -1, err
-		}
-
-		return transferEvent.Id, nil
-	}
-
-	sqlStatement := orm.CreateInsertStatement(types.ModelTransferEvent{}, tableName, primaryKey)
-
-	id := 0
-
-	err = db.QueryRow(
-		sqlStatement, 
-		transferEvent.BlockNumber,
-		transferEvent.TransactionHash,
-		transferEvent.LogIndex,
-		transferEvent.ContractAddress,
-		transferEvent.FromAddress,
-		transferEvent.ToAddress,
-		transferEvent.EventValue.String(),
-	).Scan(&id)
-	if err != nil {
-		return -1, err
-	}
-
-	return id, nil
-}
-
-
 func BatchInsertOrUpdate(transferEvents []types.ModelTransferEvent) ([]int, error) {
 	if len(transferEvents) == 0 {
 		return nil, nil
@@ -208,7 +162,7 @@ func BatchInsertOrUpdate(transferEvents []types.ModelTransferEvent) ([]int, erro
 		var sqlBuilder strings.Builder
 		sqlBuilder.WriteString(`
 			INSERT INTO ` + tableName + ` (
-				BLOCK_NUMBER, TRANSACTION_HASH, LOG_INDEX, CONTRACT_ADDRESS, 
+				BLOCK_NUMBER, LOG_INDEX, CONTRACT_ADDRESS, 
 				FROM_ADDRESS, TO_ADDRESS, EVENT_VALUE
 			) VALUES `)
 
@@ -236,16 +190,13 @@ func BatchInsertOrUpdate(transferEvents []types.ModelTransferEvent) ([]int, erro
 			sqlBuilder.WriteString(strconv.Itoa(count+4))
 			sqlBuilder.WriteString(", $")
 			sqlBuilder.WriteString(strconv.Itoa(count+5))
-			sqlBuilder.WriteString(", $")
-			sqlBuilder.WriteString(strconv.Itoa(count+6))
 			sqlBuilder.WriteString(")")
 
-			count += 7
+			count += 6
 
 			args = append(
 				args, 
 				event.BlockNumber, 
-				event.TransactionHash, 
 				event.LogIndex, 
 				event.ContractAddress, 
 				event.FromAddress, 
@@ -256,12 +207,11 @@ func BatchInsertOrUpdate(transferEvents []types.ModelTransferEvent) ([]int, erro
 
 		sqlBuilder.WriteString(`
 			ON CONFLICT (BLOCK_NUMBER, LOG_INDEX) DO UPDATE SET 
-				TRANSACTION_HASH = EXCLUDED.TRANSACTION_HASH,
 				CONTRACT_ADDRESS = EXCLUDED.CONTRACT_ADDRESS,
 				FROM_ADDRESS = EXCLUDED.FROM_ADDRESS,
 				TO_ADDRESS = EXCLUDED.TO_ADDRESS,
 				EVENT_VALUE = EXCLUDED.EVENT_VALUE 
-			RETURNING ID`)
+			`)
 
 		sql := sqlBuilder.String()
 
@@ -375,9 +325,7 @@ func scan(rows orm.Scannable) (*types.ModelTransferEvent, error) {
 	var tempValue []uint8
 
 	err := rows.Scan(
-		&transferEvent.Id,
 		&transferEvent.BlockNumber,
-		&transferEvent.TransactionHash,
 		&transferEvent.LogIndex,
 		&transferEvent.ContractAddress,
 		&transferEvent.FromAddress,

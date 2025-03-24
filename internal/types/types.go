@@ -45,9 +45,7 @@ type NameValue struct {
 }
 
 type ModelTransferEvent struct {
-	Id int `postgres.Table:"ID"`
 	BlockNumber uint64 `postgres.Table:"BLOCK_NUMBER"`
-	TransactionHash string `postgres.Table:"TRANSACTION_HASH"`
 	LogIndex int `postgres.Table:"LOG_INDEX"`
 	ContractAddress common.Address `postgres.Table:"CONTRACT_ADDRESS"`
 	FromAddress common.Address `postgres.Table:"FROM_ADDRESS"`

@@ -40,16 +40,16 @@ services:
       -c ssl_cert_file=/var/lib/postgresql/certs/server.crt
       -c ssl_key_file=/var/lib/postgresql/certs/server.key
       -c shared_buffers=8GB
-      -c work_mem=64MB
-      -c effective_cache_size=16GB
-      -c maintenance_work_mem=2GB
+      -c work_mem=512MB
+      -c effective_cache_size=22GB
+      -c maintenance_work_mem=1GB
       -c checkpoint_timeout=15min
       -c checkpoint_completion_target=0.9
       -c wal_buffers=16MB
       -c wal_level=minimal
       -c wal_compression=on
-      -c max_parallel_workers_per_gather=4
-      -c max_parallel_workers=6
+      -c max_parallel_workers_per_gather=12
+      -c max_parallel_workers=16
       -c random_page_cost=1.1 -c seq_page_cost=1.0
       -c min_wal_size=2GB 
       -c max_wal_size=16GB

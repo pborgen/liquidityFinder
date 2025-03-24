@@ -93,9 +93,12 @@ func Start() {
 			return
 		}
 		
+		gatherEventsTimeStart := time.Now()
 		transfers, err := 
 			transferEventGather.GetAllTransferEventsForBlockRange(context.Background(), fromBlock, toBlock)
-
+		gatherEventsTimeEnd := time.Now()
+		gatherEventsTime := gatherEventsTimeEnd.Sub(gatherEventsTimeStart).Seconds()
+		log.Debug().Msgf("Gathering events time: %.2f seconds", gatherEventsTime)
 
 		if err != nil {
 			log.Error().Msgf("Error getting transfers for block range. Retrying... %d, %d, %v", fromBlock, toBlock, err)
@@ -121,7 +124,6 @@ func Start() {
 
 				transferEvents = append(transferEvents, types.ModelTransferEvent{
 					BlockNumber: transfer.Block,
-					TransactionHash: transfer.TxHash.Hex(),
 					LogIndex: index,
 					ContractAddress: transfer.ContractAddress,
 					FromAddress: transfer.From,
@@ -130,7 +132,15 @@ func Start() {
 				})
 			}
 
+			numberOfEvents := len(transferEvents)
+			log.Debug().Msgf("Number of events to insert: %d", numberOfEvents)
+
+			insertTimeStart := time.Now()
 			_, err = transferEventService.BatchInsertOrUpdate(transferEvents)
+			insertTimeEnd := time.Now()
+			insertTime := insertTimeEnd.Sub(insertTimeStart).Seconds()
+			log.Debug().Msgf("Inserting events time: %.2f seconds", insertTime)
+
 			if err != nil {
 				log.Error().Msgf("Error inserting transfer events. Retrying... %d, %d, %v", fromBlock, toBlock, err)
 				panic(err)
@@ -150,9 +160,10 @@ func Start() {
 				toBlock = fromBlock + maxAmountOfBlocksToProcess
 			}
 
-			blocksPerSecond := float64(toBlock - fromBlock) / time.Since(start).Seconds()
+			totalTimeSeconds := time.Since(start).Seconds()
+			blocksPerSecond := float64(toBlock - fromBlock) / totalTimeSeconds
 
-			log.Debug().Msgf("Processed block range: %d - %d, %.2f blocks/sec", fromBlock, toBlock, blocksPerSecond)
+			log.Debug().Msgf("Processed block range: %d - %d, %.2f blocks/sec, %.2f seconds", fromBlock, toBlock, blocksPerSecond, totalTimeSeconds)
 		}
 	}
 }

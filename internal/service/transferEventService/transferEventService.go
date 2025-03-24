@@ -6,11 +6,6 @@ import (
 )
 
 
-
-func Insert(transferEvent types.ModelTransferEvent) (int, error) {
-	return transfer_event_model.Insert(transferEvent)
-}
-
 func BatchInsertOrUpdate(transferEvents []types.ModelTransferEvent) ([]int, error) {
 	return transfer_event_model.BatchInsertOrUpdate(transferEvents)
 }

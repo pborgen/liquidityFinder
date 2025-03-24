@@ -1,3 +1,12 @@
 cache.hexlive.net {
     reverse_proxy dragonfly:6379
 }
+
+agent.bot1.hexlive.net {
+    reverse_proxy portainer_agent:9001 {
+        transport http {
+            tls
+            tls_insecure_skip_verify
+        }
+    }
+}
