@@ -152,6 +152,12 @@ func Start() {
 			continue
 		} else {
 	
+
+			totalTimeSeconds := time.Since(start).Seconds()
+			blocksPerSecond := float64(toBlock - fromBlock) / totalTimeSeconds
+
+			log.Debug().Msgf("Processed block range: %d - %d, %.2f blocks/sec, %.2f seconds", fromBlock, toBlock, blocksPerSecond, totalTimeSeconds)
+
 			fromBlock = toBlock + 1
 
 			if fromBlock + maxAmountOfBlocksToProcess > blockchainutil.GetCurrentBlockNumber() {
@@ -160,10 +166,15 @@ func Start() {
 				toBlock = fromBlock + maxAmountOfBlocksToProcess
 			}
 
-			totalTimeSeconds := time.Since(start).Seconds()
-			blocksPerSecond := float64(toBlock - fromBlock) / totalTimeSeconds
+			if fromBlock > toBlock {
+				log.Info().Msg("No more blocks to process. Exiting...")
+				return
+			}
 
-			log.Debug().Msgf("Processed block range: %d - %d, %.2f blocks/sec, %.2f seconds", fromBlock, toBlock, blocksPerSecond, totalTimeSeconds)
+			if fromBlock == toBlock {
+				log.Info().Msg("No more blocks to process. Exiting...")
+				return
+			}
 		}
 	}
 }

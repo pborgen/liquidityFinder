@@ -16,8 +16,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/pborgen/liquidityFinder/internal/service/pairServiceV3"
 	"github.com/pborgen/liquidityFinder/cmd/updateSymbol"
+	"github.com/pborgen/liquidityFinder/internal/service/pairServiceV3"
 )
 
 func main() {
@@ -71,11 +71,15 @@ func main() {
 	} else if processName == "addNewPairsForAllV3Dexes" {
 		pairServiceV3.AddNewPairForAllV3Dexes(pulsechainNetworkId)
 	} else if processName == "populateTransferEvents" {
-		transferEventGather.Start()
-		time.Sleep(10 * time.Second)
+		for {
+			transferEventGather.Start()
+			time.Sleep(10 * time.Second)
+		}
 	} else if processName == "processTokenAmounts" {
-		tokenAmountService.Start()
-		time.Sleep(10 * time.Second)
+		for {
+			tokenAmountService.Start()
+			time.Sleep(10 * time.Second)
+		}
 	} else if processName == "writePlsPairsByDexId" {
 		dexpairgather.WriteToFilePlsPairsByDexId([]int{3, 4})
 	} else if processName == "fixPairOrdering" {
