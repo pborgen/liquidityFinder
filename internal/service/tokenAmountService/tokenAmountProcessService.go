@@ -55,9 +55,11 @@ func Start() {
 
 		if len(modelTransferEventList) > 0 {
 
+			startTimeGetModelTokenAmounts := time.Now()
 			modelTokenAmounts, err := getModelTokenAmountsFromTransferEvents(modelTransferEventList)
+			durationGetModelTokenAmounts := time.Since(startTimeGetModelTokenAmounts).Seconds()
 			log.Debug().Msgf("Gathered transfer events: %d", len(modelTransferEventList))
-
+			log.Debug().Msgf("Time taken for getModelTokenAmountsFromTransferEvents: %f seconds", durationGetModelTokenAmounts)
 			if err != nil {
 				panic(err)
 			}
@@ -125,10 +127,11 @@ func Start() {
 
 		duration := time.Since(startTime).Seconds()
 		
-		blocksPerSecond := float64(toBlockNumber - fromBlockNumber) / duration
+		numberOfBlocksProcessed := toBlockNumber - fromBlockNumber
+		blocksPerSecond := float64(numberOfBlocksProcessed) / duration
 		log.Info().Msgf(
-			"Time taken to process block range: %d - %d: %f blocks/sec with a total time of %f seconds", 
-			fromBlockNumber, toBlockNumber, blocksPerSecond, duration,
+			"Time taken to process block range: %d - %d (%d blocks): at %f blocks/sec with a total time of %f seconds", 
+			fromBlockNumber, toBlockNumber, numberOfBlocksProcessed, blocksPerSecond, duration,
 		)
 	}
 }
