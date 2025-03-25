@@ -24,6 +24,7 @@ services:
   postgres:
     container_name: postgres
     image: postgres:17
+    shm_size: '8gb'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -40,7 +41,7 @@ services:
       -c ssl_cert_file=/var/lib/postgresql/certs/server.crt
       -c ssl_key_file=/var/lib/postgresql/certs/server.key
       -c shared_buffers=8GB
-      -c work_mem=256MB
+      -c work_mem=128MB
       -c effective_cache_size=24GB
       -c maintenance_work_mem=1GB
       -c checkpoint_timeout=15min
