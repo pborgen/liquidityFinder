@@ -14,8 +14,8 @@ RUN go mod download
 #Copy Everything
 COPY . .
 
-RUN ls
-RUN tree /
+#RUN ls
+#RUN tree /
 
 # Tax token detector
 WORKDIR /app/apps/python/parsebytecode

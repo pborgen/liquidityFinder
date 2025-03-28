@@ -1,6 +1,7 @@
 package tokenAmountService
 
 import (
+	"context"
 	"math/big"
 	"time"
 
@@ -17,7 +18,9 @@ var tokenAmountServiceBatchSize = myConfig.GetInstance().TokenAmountServiceBatch
 
 func Start() {
 
-
+// Create a context that we can cancel
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	
 	largestTokenAmountBlockNumberUpdated, err := GetLargestLastBlockNumberUpdated()
 	if err != nil {
@@ -43,6 +46,13 @@ func Start() {
 	}
 
 	for {
+
+		// Check if context is done before processing
+		if ctx.Err() != nil {
+			log.Info().Msg("Shutting down transfer event gatherer...")
+			return
+		}
+
 		startTime := time.Now()
 		log.Info().Msg("----------------------- START------------------------------")
 		log.Info().Msgf("Processing block range: %d - %d", fromBlockNumber, toBlockNumber)
