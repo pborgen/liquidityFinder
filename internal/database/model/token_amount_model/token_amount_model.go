@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"math/big"
 	"strconv"
@@ -203,7 +202,11 @@ func removeEmptyAddresses(addresses []common.Address) []common.Address {
 }
 
 func GetByContractAddressAndOwner(tokenAddressOwnerAddressList []TokenAddressOwnerAddress) (map[common.Address]map[common.Address]*types.ModelTokenAmount, error) {
-    if len(tokenAddressOwnerAddressList) == 0 {
+    
+	batchSize := myConfig.GetInstance().TokenAmountModelBatchSize
+	workerCount := myConfig.GetInstance().TokenAmountModelWorkerCount
+
+	if len(tokenAddressOwnerAddressList) == 0 {
         return make(map[common.Address]map[common.Address]*types.ModelTokenAmount), nil
     }
 
@@ -214,8 +217,7 @@ func GetByContractAddressAndOwner(tokenAddressOwnerAddressList []TokenAddressOwn
         result[pair.TokenAddress] = make(map[common.Address]*types.ModelTokenAmount)
     }
 
-    batchSize := 100
-    maxWorkers := 8 // Limit concurrent goroutines
+   
     numBatches := (len(tokenAddressOwnerAddressList) + batchSize - 1) / batchSize
 
     // Error channel to collect errors from goroutines
@@ -223,7 +225,7 @@ func GetByContractAddressAndOwner(tokenAddressOwnerAddressList []TokenAddressOwn
     var wg sync.WaitGroup
 
     // Create a channel to control the number of workers
-    semaphore := make(chan struct{}, maxWorkers)
+    semaphore := make(chan struct{}, workerCount)
 
     // Process batches with limited concurrency
     for i := 0; i < len(tokenAddressOwnerAddressList); i += batchSize {
@@ -259,16 +261,8 @@ func GetByContractAddressAndOwner(tokenAddressOwnerAddressList []TokenAddressOwn
             sqlBuilder.WriteString(")")
 
             // Execute query for current batch
-            startTime := time.Now()
             rows, err := db.Query(sqlBuilder.String(), args...)
-            duration := time.Since(startTime).Seconds()
-            log.Debug().
-                Int("worker", len(semaphore)).
-                Int("batch_start", start).
-                Int("batch_end", end).
-                Float64("duration", duration).
-                Msg("Batch processing")
-
+       
             if err != nil {
                 errChan <- fmt.Errorf("batch %d-%d error: %w", start, end, err)
                 return

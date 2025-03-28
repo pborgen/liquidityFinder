@@ -48,6 +48,8 @@ type MyConfig struct {
     TransferEventGatherBatchSize int
     TokenAmountModelInsertBatchSize int
     TokenAmountServiceBatchSize uint64
+    TokenAmountModelBatchSize int
+    TokenAmountModelWorkerCount int
     SeedPw string
 }
 
@@ -132,6 +134,8 @@ func (c *MyConfig) load(envFile string) (*MyConfig, error) {
     config.TransferEventGatherBatchSize = getEnvInt("TRANSFER_EVENT_GATHER_BATCH_SIZE", 10)
     config.TokenAmountModelInsertBatchSize = getEnvInt("TOKEN_AMOUNT_MODEL_INSERT_BATCH_SIZE", 1000)
     config.TokenAmountServiceBatchSize = getEnvUint64("TOKEN_AMOUNT_SERVICE_BATCH_SIZE", 1000)
+    config.TokenAmountModelBatchSize = getEnvInt("TOKEN_AMOUNT_MODEL_BATCH_SIZE", 100)
+    config.TokenAmountModelWorkerCount = getEnvInt("TOKEN_AMOUNT_MODEL_WORKER_COUNT", 5)
     return config, nil
 }
 
