@@ -56,31 +56,40 @@ var once sync.Once
 
 func GetInstance() *MyConfig {
 	once.Do(func() {
-
-        var envFilePath string
-
-        dockerContainerEnvFile := "/opt/.env"
-        // Check if we are running in a container
-        if myUtil.FileExists(dockerContainerEnvFile) {
-            log.Info().Msg("Running in a container")
-            envFilePath = dockerContainerEnvFile
-        } else {
-            log.Info().Msg("Running in a non-container environment")
-            envFilePath = os.Getenv("BASE_DIR") + "/.env"
-        }
-        
-        log.Info().Msg("Loading config from " + envFilePath )
-
-		myConfig, err := instance.load(envFilePath)
-		if err != nil {
-			panic(err)
-		}
-
-        log.Info().Msg("Config loaded")
-
-		instance = myConfig
+		setup()
 	})
 	return instance
+}
+
+func GetInstanceRefresh() *MyConfig {
+	setup()
+	
+	return instance
+}
+
+func setup() {
+    var envFilePath string
+
+    dockerContainerEnvFile := "/opt/.env"
+    // Check if we are running in a container
+    if myUtil.FileExists(dockerContainerEnvFile) {
+        log.Info().Msg("Running in a container")
+        envFilePath = dockerContainerEnvFile
+    } else {
+        log.Info().Msg("Running in a non-container environment")
+        envFilePath = os.Getenv("BASE_DIR") + "/.env"
+    }
+    
+    log.Info().Msg("Loading config from " + envFilePath )
+
+    myConfig, err := instance.load(envFilePath)
+    if err != nil {
+        panic(err)
+    }
+
+    log.Info().Msg("Config loaded")
+
+    instance = myConfig
 }
 
 // Load reads the configuration from environment variables

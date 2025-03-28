@@ -3,6 +3,7 @@ package blockchainutil
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	blockchainclient "github.com/pborgen/liquidityFinder/internal/blockchain/blockchainClient"
+	"github.com/pborgen/liquidityFinder/internal/database/model/account"
 	"github.com/pborgen/liquidityFinder/internal/myUtil"
 	"github.com/rs/zerolog/log"
 )
@@ -239,6 +241,10 @@ func GetCostInPlsForTransaction(gasLimit *big.Int, gasPrice *big.Int, gasTipCap 
 	costInPls := new(big.Int).Mul(gasLimit, gasPlusTip)
 
 	return costInPls
+}
+
+func GetPrivateKeyFromAccount(account *account.ModelAccount) (*ecdsa.PrivateKey, error) {
+	return crypto.HexToECDSA(account.PrivateKey)
 }
 
 func GetAuthAccount(privateKeyString string, chainId int) (*bind.TransactOpts, error) {

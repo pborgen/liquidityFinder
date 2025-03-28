@@ -44,10 +44,12 @@ func Start() {
 
 	for {
 		startTime := time.Now()
-		
+		log.Info().Msg("----------------------- START------------------------------")
 		log.Info().Msgf("Processing block range: %d - %d", fromBlockNumber, toBlockNumber)
 		modelTransferEventList, err := transferEventService.GetEventsForBlockRangeOrdered(fromBlockNumber, toBlockNumber)
-
+		durationGetEventsForBlockRangeOrdered := time.Since(startTime).Seconds()
+		log.Debug().Msgf("Time taken for GetEventsForBlockRangeOrdered: %f seconds", durationGetEventsForBlockRangeOrdered)
+		
 		if err != nil {
 			log.Error().Msgf("Error getting transfers for block range. Retrying... %d, %d, %v", fromBlockNumber, toBlockNumber, err)
 			continue
@@ -161,7 +163,10 @@ func getModelTokenAmountsFromTransferEvents(
 		contractAddressOwnersMap[contractAddress] = append(contractAddressOwnersMap[contractAddress], toAddress)
 	}
 
+	startTimeGetByContractAddressAndOwner := time.Now()
 	modelTokenAmounts, err := GetByContractAddressAndOwner(tokenAddressOwnerAddressList)
+	durationGetByContractAddressAndOwner := time.Since(startTimeGetByContractAddressAndOwner).Seconds()
+	log.Debug().Msgf("Time taken for GetByContractAddressAndOwner: %f seconds", durationGetByContractAddressAndOwner)
 	
 	if err != nil {
 		return nil, err

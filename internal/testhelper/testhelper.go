@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/pborgen/liquidityFinder/internal/myConfig"
 )
+
+
 
 func Setup() {
 	dir, err := os.Getwd()
@@ -14,7 +18,7 @@ func Setup() {
 	}
 	
 	// find "goLangArb/"
-	stringToFind := "goLangArb"
+	stringToFind := "liquidityFinder"
 	stringToFindLength := len(stringToFind)
 	index := strings.Index(dir, stringToFind)
 
@@ -22,4 +26,6 @@ func Setup() {
 	baseDir := dir[:index + stringToFindLength]
 
     os.Setenv("BASE_DIR", baseDir)
+
+	myConfig.GetInstanceRefresh()
 }

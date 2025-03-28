@@ -15,10 +15,10 @@ import (
 
 var lock = &sync.Mutex{}
 var dbConnection *sql.DB
-var cfg = myConfig.GetInstance()
 
 
 func GetDBConnection() *sql.DB {
+	cfg := myConfig.GetInstance()
 
 	if dbConnection == nil {
 		lock.Lock()

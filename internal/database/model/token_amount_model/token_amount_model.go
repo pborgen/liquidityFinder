@@ -3,6 +3,8 @@ package token_amount_model
 import (
 	"errors"
 	"fmt"
+	"sync"
+	"time"
 
 	"math/big"
 	"strconv"
@@ -201,65 +203,125 @@ func removeEmptyAddresses(addresses []common.Address) []common.Address {
 }
 
 func GetByContractAddressAndOwner(tokenAddressOwnerAddressList []TokenAddressOwnerAddress) (map[common.Address]map[common.Address]*types.ModelTokenAmount, error) {
-	if len(tokenAddressOwnerAddressList) == 0 {
-		return make(map[common.Address]map[common.Address]*types.ModelTokenAmount), nil
-	}
+    if len(tokenAddressOwnerAddressList) == 0 {
+        return make(map[common.Address]map[common.Address]*types.ModelTokenAmount), nil
+    }
 
-	// Initialize result map
-	result := make(map[common.Address]map[common.Address]*types.ModelTokenAmount)
-	for _, pair := range tokenAddressOwnerAddressList {
-		result[pair.TokenAddress] = make(map[common.Address]*types.ModelTokenAmount)
-	}
+    // Initialize result map with mutex for concurrent access
+    result := make(map[common.Address]map[common.Address]*types.ModelTokenAmount)
+    var resultMutex sync.RWMutex
+    for _, pair := range tokenAddressOwnerAddressList {
+        result[pair.TokenAddress] = make(map[common.Address]*types.ModelTokenAmount)
+    }
 
-	// Process in batches of 1000 pairs
-	batchSize := 1000
-	db := database.GetDBConnection()
+    batchSize := 100
+    maxWorkers := 8 // Limit concurrent goroutines
+    numBatches := (len(tokenAddressOwnerAddressList) + batchSize - 1) / batchSize
 
-	for i := 0; i < len(tokenAddressOwnerAddressList); i += batchSize {
-		end := i + batchSize
-		if end > len(tokenAddressOwnerAddressList) {
-			end = len(tokenAddressOwnerAddressList)
-		}
+    // Error channel to collect errors from goroutines
+    errChan := make(chan error, numBatches)
+    var wg sync.WaitGroup
 
-		// Build query for current batch
-		var sqlBuilder strings.Builder
-		sqlBuilder.WriteString("SELECT " + tokenAmountColumnNames + " FROM " + tableName + 
-			" WHERE (TOKEN_ADDRESS, OWNER_ADDRESS) IN (")
+    // Create a channel to control the number of workers
+    semaphore := make(chan struct{}, maxWorkers)
 
-		// Build the value list for current batch
-		args := make([]interface{}, 0, (end-i)*2)
-		for j, pair := range tokenAddressOwnerAddressList[i:end] {
-			if j > 0 {
-				sqlBuilder.WriteString(",")
-			}
-			sqlBuilder.WriteString(fmt.Sprintf("($%d,$%d)", j*2+1, j*2+2))
-			args = append(args, pair.TokenAddress.Bytes(), pair.OwnerAddress.Bytes())
-		}
-		sqlBuilder.WriteString(")")
+    // Process batches with limited concurrency
+    for i := 0; i < len(tokenAddressOwnerAddressList); i += batchSize {
+        wg.Add(1)
+        semaphore <- struct{}{} // Acquire semaphore
+        
+        go func(start int) {
+            defer wg.Done()
+            defer func() { <-semaphore }() // Release semaphore
 
-		// Execute query for current batch
-		rows, err := db.Query(sqlBuilder.String(), args...)
-		if err != nil {
-			return nil, err
-		}
+            end := start + batchSize
+            if end > len(tokenAddressOwnerAddressList) {
+                end = len(tokenAddressOwnerAddressList)
+            }
 
-		// Process results
-		for rows.Next() {
-			tokenAmount, err := scan(rows)
-			if err != nil {
-				rows.Close()
-				return nil, err
-			}
-			result[tokenAmount.TokenAddress][tokenAmount.OwnerAddress] = tokenAmount
-		}
-		rows.Close()
+            // Get new db connection for this goroutine
+            db := database.GetDBConnection()
 
-		if err = rows.Err(); err != nil {
-			return nil, err
-		}
-	}
+            // Build query for current batch
+            var sqlBuilder strings.Builder
+            sqlBuilder.WriteString("SELECT " + tokenAmountColumnNames + " FROM " + tableName + 
+                " WHERE (TOKEN_ADDRESS, OWNER_ADDRESS) IN (")
 
-	return result, nil
+            // Build the value list for current batch
+            args := make([]interface{}, 0, (end-start)*2)
+            for j, pair := range tokenAddressOwnerAddressList[start:end] {
+                if j > 0 {
+                    sqlBuilder.WriteString(",")
+                }
+                sqlBuilder.WriteString(fmt.Sprintf("($%d,$%d)", j*2+1, j*2+2))
+                args = append(args, pair.TokenAddress.Bytes(), pair.OwnerAddress.Bytes())
+            }
+            sqlBuilder.WriteString(")")
+
+            // Execute query for current batch
+            startTime := time.Now()
+            rows, err := db.Query(sqlBuilder.String(), args...)
+            duration := time.Since(startTime).Seconds()
+            log.Debug().
+                Int("worker", len(semaphore)).
+                Int("batch_start", start).
+                Int("batch_end", end).
+                Float64("duration", duration).
+                Msg("Batch processing")
+
+            if err != nil {
+                errChan <- fmt.Errorf("batch %d-%d error: %w", start, end, err)
+                return
+            }
+            defer rows.Close()
+
+            // Process results
+            batchResults := make(map[common.Address]map[common.Address]*types.ModelTokenAmount)
+            for rows.Next() {
+                tokenAmount, err := scan(rows)
+                if err != nil {
+                    errChan <- fmt.Errorf("batch %d-%d scan error: %w", start, end, err)
+                    return
+                }
+
+                // Initialize inner map if needed
+                if _, exists := batchResults[tokenAmount.TokenAddress]; !exists {
+                    batchResults[tokenAmount.TokenAddress] = make(map[common.Address]*types.ModelTokenAmount)
+                }
+                batchResults[tokenAmount.TokenAddress][tokenAmount.OwnerAddress] = tokenAmount
+            }
+
+            if err = rows.Err(); err != nil {
+                errChan <- fmt.Errorf("batch %d-%d rows error: %w", start, end, err)
+                return
+            }
+
+            // Merge batch results into main result map
+            resultMutex.Lock()
+            for tokenAddr, ownerMap := range batchResults {
+                for ownerAddr, amount := range ownerMap {
+                    result[tokenAddr][ownerAddr] = amount
+                }
+            }
+            resultMutex.Unlock()
+
+        }(i)
+    }
+
+    // Wait for all goroutines to finish
+    go func() {
+        wg.Wait()
+        close(errChan)
+    }()
+
+    // Check for any errors
+    for err := range errChan {
+        if err != nil {
+            return nil, err
+        }
+    }
+
+    return result, nil
 }
 
 func scan(rows orm.Scannable) (*types.ModelTokenAmount, error) {
