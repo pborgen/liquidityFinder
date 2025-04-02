@@ -3,3 +3,4 @@
 *.key
 cmd/__debug_bin*
 .env
+cmd/api/__debug_bin*
