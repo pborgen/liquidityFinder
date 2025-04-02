@@ -5,13 +5,13 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"sync"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	blockchainclient "github.com/pborgen/liquidityFinder/internal/blockchain/blockchainClient"
 	"github.com/pborgen/liquidityFinder/internal/testhelper"
-	"github.com/pborgen/liquidityFinder/myConst"
 	"github.com/rs/zerolog/log"
 )
 
@@ -20,103 +20,122 @@ func init() {
 }
 
 func TestBla(t *testing.T) {
-	// hexChars := []rune{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'}
-	// client := blockchainclient.GetHttpClient()
+	numWorkers := 10
+	maxIterations := int64(1000000)
+	batchSize := int64(1000)
 
-	privateKeyInt := big.NewInt(1000)
-    one := big.NewInt(1)
-    maxIterations := int64(1000000) // Limit iterations for demonstration (e.g., first 1000 keys)
+	// Channel for workers to signal completion
+	var wg sync.WaitGroup
+	errChan := make(chan error, numWorkers)
 
+	// Create a channel to distribute work
+	workChan := make(chan int64, numWorkers)
 
-	for i := int64(0); i < maxIterations; i++ {
-        // Convert to 32-byte slice (pad left with zeros if needed)
-        privateKeyBytes := privateKeyInt.Bytes()
-        if len(privateKeyBytes) < 32 {
-            padded := make([]byte, 32)
-            copy(padded[32-len(privateKeyBytes):], privateKeyBytes)
-            privateKeyBytes = padded
-        }
+	// Start workers
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
 
-        // Parse as ECDSA private key
-        privateKey, err := crypto.ToECDSA(privateKeyBytes)
-        if err != nil {
-            log.Printf("Invalid private key at iteration %d: %v", i, err)
-			privateKeyInt.Add(privateKeyInt, one)
-            continue
-        }
+			// Each worker gets its own private key to increment
+			privateKeyInt := big.NewInt(0)
+			one := big.NewInt(1)
 
-        // Derive public key and address
-        publicKey := privateKey.Public().(*ecdsa.PublicKey)
-        address := crypto.PubkeyToAddress(*publicKey)
+			for startIndex := range workChan {
+				endIndex := startIndex + batchSize
+				if endIndex > maxIterations {
+					endIndex = maxIterations
+				}
 
-        checkBalance(address)
+				// Set initial private key for this batch
+				privateKeyInt.SetInt64(startIndex)
 
-        // Convert private key to hex string
-        privateKeyHex := fmt.Sprintf("%064x", privateKey.D) // D is the private key scalar
+				for i := startIndex; i < endIndex; i++ {
+					// Convert to 32-byte slice
+					privateKeyBytes := privateKeyInt.Bytes()
+					if len(privateKeyBytes) < 32 {
+						padded := make([]byte, 32)
+						copy(padded[32-len(privateKeyBytes):], privateKeyBytes)
+						privateKeyBytes = padded
+					}
 
-        // Print details
-        fmt.Printf("Private Key: 0x%s\n", privateKeyHex)
-        fmt.Printf("Address: %s\n", address.Hex())
-       
-        fmt.Println("---")
+					// Parse as ECDSA private key
+					privateKey, err := crypto.ToECDSA(privateKeyBytes)
+					if err != nil {
+						log.Debug().
+							Int("worker", workerID).
+							Int64("iteration", i).
+							Err(err).
+							Msg("Invalid private key")
+						privateKeyInt.Add(privateKeyInt, one)
+						continue
+					}
 
-        // Increment private key
-        privateKeyInt.Add(privateKeyInt, one)
-    }
+					// Derive public key and address
+					publicKey := privateKey.Public().(*ecdsa.PublicKey)
+					address := crypto.PubkeyToAddress(*publicKey)
 
-	// for _, char := range hexChars {
-	// 	privateKeyHex := fmt.Sprintf("%s%s", string(char), string(char))
-	// 	log.Info().Msgf("Private Key Hex: %s", privateKeyHex)
+					// Check balance
+					checkBalance(address)
 
+					// Convert private key to hex string for logging
+					if i%1000 == 0 { // Log less frequently
+						privateKeyHex := fmt.Sprintf("%064x", privateKey.D)
+						log.Debug().
+							Int("worker", workerID).
+							Int64("iteration", i).
+							Str("privateKey", privateKeyHex).
+							Str("address", address.Hex()).
+							Msg("Processing")
+					}
 
-	// 	balance, err := client.BalanceAt(context.Background(), common.HexToAddress("0x0000000000000000000000000000000000000000"), nil)
-	// 	if err != nil {
-	// 		log.Fatal().Msgf("Failed to get balance: %v", err)
-	// 	}
-	// 	log.Info().Msgf("Balance: %s", balance.String())
+					// Increment private key
+					privateKeyInt.Add(privateKeyInt, one)
 
-	// 	if balance.Cmp(big.NewInt(0)) > 0 {
-	// 		log.Info().Msgf("Balance is greater than 0: %s", balance.String())
-	// 	}
-	// }
+				}
+			}
+		}(i)
+	}
 
-	privateKeyHex := "0000000000000000000000000000000000000000000000000000000000000001"
+	// Distribute work to workers
+	go func() {
+		for i := int64(0); i < maxIterations; i += batchSize {
+			workChan <- i
+		}
+		close(workChan)
+	}()
 
-    // Parse the private key
-    privateKey, err := crypto.HexToECDSA(privateKeyHex)
-    if err != nil {
-        log.Fatal().Msgf("Failed to parse private key: %v", err)
-    }
+	// Wait for all workers to finish
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
 
-    // Derive the public key
-    publicKey := privateKey.Public()
-    publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-    if !ok {
-        log.Fatal().Msgf("Error casting public key to ECDSA")
-    }
-
-    // Convert to bytes (uncompressed form, 65 bytes: 04 || X || Y)
-    publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
-    log.Info().Msgf("Public Key (hex): %x\n", publicKeyBytes)
-
-    // Optional: Derive Ethereum address from public key
-    address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
-    fmt.Printf("Ethereum Address: %s\n", address)
-
-	log.Info().Msgf("one ddddpls: %s", myConst.GetOneWplsBigint().String())
+	// Check for any errors
+	for err := range errChan {
+		if err != nil {
+			t.Errorf("Worker error: %v", err)
+		}
+	}
 }
 
 func checkBalance(address common.Address) {
-	client := blockchainclient.GetHttpClient()
+	client := blockchainclient.GetPublicHttpClient()
 	balance, err := client.BalanceAt(context.Background(), address, nil)
 	if err != nil {
-		log.Fatal().Msgf("Failed to get balance: %v", err)
+		log.Error().
+			Err(err).
+			Str("address", address.Hex()).
+			Msg("Failed to get balance")
+		return // Don't fatal in a goroutine
 	}
 
-	minBalance := big.NewInt(0).Mul(big.NewInt(100), big.NewInt(1000000000000000000))
+	minBalance := big.NewInt(0).Mul(big.NewInt(10), big.NewInt(1000000000000000000))
 
 	if balance.Cmp(minBalance) > 0 {
-		log.Info().Msgf("Balance is greater than 0: %s", balance.String())
-		log.Info().Msgf("Address: %s", address.Hex())
+		log.Info().
+			Str("balance", balance.String()).
+			Str("address", address.Hex()).
+			Msg("Found address with large balance!")
 	}
 }

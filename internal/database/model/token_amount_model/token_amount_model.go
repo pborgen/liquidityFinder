@@ -19,16 +19,6 @@ import (
 	"github.com/pborgen/liquidityFinder/internal/types"
 )
 
-// Table schema:
-// CREATE TABLE TOKEN_AMOUNT (
-//     ID SERIAL PRIMARY KEY,                                    -- Auto-incrementing integer
-//     TOKEN_ADDRESS BYTEA NOT NULL,                            -- Ethereum addresses stored as 20 bytes
-//     OWNER_ADDRESS BYTEA NOT NULL,                            -- Ethereum addresses stored as 20 bytes
-//     AMOUNT NUMERIC(78,0) NOT NULL,                           -- For large token amounts
-//     LAST_BLOCK_NUMBER_UPDATED BIGINT NOT NULL,               -- Range: -9,223,372,036,854,775,808 to +9,223,372,036,854,775,807
-//     LAST_LOG_INDEX_UPDATED INTEGER NOT NULL,                 -- Range: -2,147,483,648 to +2,147,483,647
-//     CONSTRAINT token_amount_unique UNIQUE (TOKEN_ADDRESS, OWNER_ADDRESS)
-// );
 
 const primaryKey = "ID"
 const tableName = "TOKEN_AMOUNT"
@@ -45,11 +35,82 @@ func init() {
 
 }
 
+func GetByOwnerAddress(ownerAddress string, limit int, offset int) ([]types.ModelTokenAmount, error) {
+	db := database.GetDBConnection()
+
+	addr := common.HexToAddress(ownerAddress)
+	addrBytes := addr.Bytes()
+
+	query := fmt.Sprintf("SELECT * FROM %s WHERE OWNER_ADDRESS = $1 ORDER BY AMOUNT DESC LIMIT $2 OFFSET $3", 
+		tableName)
+
+	rows, err := db.Query(query, addrBytes, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("query error: %w", err)
+	}
+
+	defer rows.Close()
+
+	results := make([]types.ModelTokenAmount, 0)
+	for rows.Next() {
+		tokenAmount, err := scan(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan error: %w", err)
+		}
+		results = append(results, *tokenAmount)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return results, nil
+}
+
+func GetByTokenAddress(tokenAddress string, limit int, offset int) ([]types.ModelTokenAmount, error) {
+	db := database.GetDBConnection()
+
+	// Convert hex string address to bytes for PostgreSQL
+	addr := common.HexToAddress(tokenAddress)
+	addrBytes := addr.Bytes()
+
+	// Build query with pagination
+	query := fmt.Sprintf("SELECT * FROM %s WHERE TOKEN_ADDRESS = $1 ORDER BY AMOUNT DESC LIMIT $2 OFFSET $3", 
+		tableName)
+
+	// Execute query with parameters
+	rows, err := db.Query(query, addrBytes, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("query error: %w", err)
+	}
+	defer rows.Close()
+
+	// Collect results
+	results := make([]types.ModelTokenAmount, 0)
+	for rows.Next() {
+		tokenAmount, err := scan(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan error: %w", err)
+		}
+		results = append(results, *tokenAmount)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	// Return empty slice if no results found
+	if len(results) == 0 {
+		return []types.ModelTokenAmount{}, nil
+	}
+
+	return results, nil
+}
+
 func BatchInsertOrUpdate(tokenAmounts []types.ModelTokenAmount) (error) {
 	if len(tokenAmounts) == 0 {
 		return nil
 	}
-
 
 	for i := 0; i < len(tokenAmounts); i += tokenAmountModelInsertBatchSize {
 		end := i + tokenAmountModelInsertBatchSize

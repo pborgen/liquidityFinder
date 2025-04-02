@@ -33,27 +33,27 @@ var ( CacheType_PlsPairWithHighAmountOfPls = CacheType {
 )
 
 var ( CacheType_NonPlsPairWithHighAmountOfPls = CacheType {
-    Name: "NonPlsPairWithHighAmountOfPls",
-    Type: []types.ModelPair{},
-    Expiration: 2 * time.Hour,
-    Compress: true,
-}
+        Name: "NonPlsPairWithHighAmountOfPls",
+        Type: []types.ModelPair{},
+        Expiration: 2 * time.Hour,
+        Compress: true,
+    }
 )
 
 var ( CacheType_AllNonTaxPairs = CacheType {
-    Name: "AllNonTaxPairs",
-    Type: []types.ModelPair{},
-    Expiration: 2 * time.Hour,
-    Compress: true,
-}
+        Name: "AllNonTaxPairs",
+        Type: []types.ModelPair{},
+        Expiration: 2 * time.Hour,
+        Compress: true,
+    }
 )
 
 var ( CacheType_PairService_AllPairs = CacheType {
-    Name: "PairService_AllPairs",
-    Type: []types.ModelPair{},
-    Expiration: 2 * time.Hour,
-    Compress: true,
-}
+        Name: "PairService_AllPairs",
+        Type: []types.ModelPair{},
+        Expiration: 2 * time.Hour,
+        Compress: true,
+    }
 )
 
 var ( CacheType_PairService_AllPairs_WithLimit = CacheType {
@@ -65,9 +65,25 @@ var ( CacheType_PairService_AllPairs_WithLimit = CacheType {
 )
 
 var ( CacheType_PairService_AllHighLiquidityPairs = CacheType {
-    Name: "PairService_AllHighLiquidityPairs",
-    Type: []types.ModelPair{},
-    Expiration: 2 * time.Hour,
+        Name: "PairService_AllHighLiquidityPairs",
+        Type: []types.ModelPair{},
+        Expiration: 2 * time.Hour,
+        Compress: true,
+    }
+)
+
+var ( CacheType_TokenAmountService_GetByTokenAddress = CacheType {
+    Name: "TokenAmountService_GetByTokenAddress",
+    Type: []types.ModelTokenAmount{},
+    Expiration: 30 * time.Minute,
+    Compress: true,
+}
+)
+
+var ( CacheType_TokenAmountService_GetByOwnerAddress = CacheType {
+    Name: "TokenAmountService_GetByOwnerAddress",
+    Type: []types.ModelTokenAmount{},
+    Expiration: 30 * time.Minute,
     Compress: true,
 }
 )

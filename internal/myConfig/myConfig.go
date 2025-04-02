@@ -37,6 +37,7 @@ type MyConfig struct {
 
     // Blockchain Client
     BlockchainClientUrlHttp string
+    BlockchainClientPublicUrlHttp string
     BlockchainClientUrlWs string
 
 
@@ -125,6 +126,7 @@ func (c *MyConfig) load(envFile string) (*MyConfig, error) {
 
     // Blockchain Client
     config.BlockchainClientUrlHttp = getEnvString("BLOCKCHAIN_CLIENT_URL_HTTP", "")
+    config.BlockchainClientPublicUrlHttp = getEnvString("BLOCKCHAIN_CLIENT_PUBLIC_URL_HTTP", "")
     config.BlockchainClientUrlWs = getEnvString("BLOCKCHAIN_CLIENT_URL_WS", "")
 
     // Moralis

@@ -40,6 +40,24 @@ func GetHttpClient() *ethclient.Client {
 	return httpClientInstance
 }
 
+func GetPublicHttpClient() *ethclient.Client {
+	onceGetHttpClient.Do(func() {
+		
+		url := myConfig.GetInstance().BlockchainClientPublicUrlHttp
+		
+		client, err := ethclient.Dial(url)
+
+		if err != nil {
+			log.Fatal().Msgf("Error in GetClient")
+		} else {
+			log.Log().Msgf("Success! you are connected to the Network")
+		}
+
+		httpClientInstance = client
+	})
+	return httpClientInstance
+}
+
 func GetRevertReason(from common.Address, tx *types.Transaction) (string, error) {
 
 	client := GetHttpClient()
