@@ -67,19 +67,18 @@ func GetByOwnerAddress(ownerAddress string, limit int, offset int) ([]types.Mode
 	return results, nil
 }
 
-func GetByTokenAddress(tokenAddress string, limit int, offset int) ([]types.ModelTokenAmount, error) {
+func GetByTokenAddress(tokenAddress common.Address, limit int, offset int) ([]types.ModelTokenAmount, error) {
 	db := database.GetDBConnection()
 
 	// Convert hex string address to bytes for PostgreSQL
-	addr := common.HexToAddress(tokenAddress)
-	addrBytes := addr.Bytes()
+
 
 	// Build query with pagination
 	query := fmt.Sprintf("SELECT * FROM %s WHERE TOKEN_ADDRESS = $1 ORDER BY AMOUNT DESC LIMIT $2 OFFSET $3", 
 		tableName)
 
 	// Execute query with parameters
-	rows, err := db.Query(query, addrBytes, limit, offset)
+	rows, err := db.Query(query, tokenAddress.Bytes(), limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("query error: %w", err)
 	}

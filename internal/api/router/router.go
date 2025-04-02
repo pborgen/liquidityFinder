@@ -30,6 +30,12 @@ func SetupRouter() *gin.Engine {
 		{
 			pairs.GET("", handlers.GetPairs)
 		}
+
+		// Token amounts endpoints
+		tokenAmounts := v1.Group("/token-amounts")
+		{
+			tokenAmounts.GET("/:tokenAddress", handlers.GetTokenAmountsForTokenAddress)
+		}
 	}
 
 

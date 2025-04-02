@@ -10,12 +10,12 @@ import (
 	"github.com/pborgen/liquidityFinder/internal/types"
 )
 
-func GetByTokenAddress(tokenAddress string, limit int, offset int) ([]types.ModelTokenAmount, error) {
+func GetByTokenAddress(tokenAddress common.Address, limit int, offset int) ([]types.ModelTokenAmount, error) {
 
 	cacheServiceInstance := cacheService.GetInstance()
 	cacheStruct := cacheService.CacheType_TokenAmountService_GetByTokenAddress
 
-	cacheKey := cacheStruct.Name + "_" + tokenAddress + "_" + strconv.Itoa(limit) + "_" + strconv.Itoa(offset)
+	cacheKey := cacheStruct.Name + "_" + tokenAddress.Hex() + "_" + strconv.Itoa(limit) + "_" + strconv.Itoa(offset)
 
 	tokenAmounts, err := cacheService.GetObject[[]types.ModelTokenAmount](context.Background(), cacheKey, cacheStruct)
 	if err != nil {

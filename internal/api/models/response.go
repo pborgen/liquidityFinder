@@ -1,6 +1,5 @@
 package models
 
-
 import "github.com/pborgen/liquidityFinder/internal/types"
 
 type Pagination struct {
@@ -11,10 +10,17 @@ type Pagination struct {
 
 
 type PairsResponse struct {
-	Success    bool       `json:"success"`
+	Success    bool       			`json:"success"`
 	Data      []types.ModelPair     `json:"data"`
-	Pagination Pagination `json:"pagination"`
+	Pagination Pagination 			`json:"pagination"`
 }
+
+type TokenAmountsResponse struct {
+	Success    bool       				   `json:"success"`
+	Data      []types.ModelTokenAmount     `json:"data"`
+	Pagination Pagination 				   `json:"pagination"`
+}
+
 
 type ErrorResponse struct {
 	Success bool `json:"success"`

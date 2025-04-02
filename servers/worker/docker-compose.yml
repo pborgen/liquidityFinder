@@ -70,7 +70,7 @@ services:
     volumes:
       - /root/dev/caddy/dragonfly-data:/data
     command: >
-      --maxmemory 1g
+      --maxmemory 2g
       --dir /data
       --snapshot_cron "0 1 * * *"
       --requirepass ${DRAGONFLY_PASSWORD}
