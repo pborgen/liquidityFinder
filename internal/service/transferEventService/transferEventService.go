@@ -1,10 +1,18 @@
 package transferEventService
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/pborgen/liquidityFinder/internal/database/model/transfer_event_model"
 	"github.com/pborgen/liquidityFinder/internal/types"
 )
 
+func GetAllForAddressGroupBy(address common.Address) ([]types.TransferEventGroupBy, error) {
+	return transfer_event_model.GetAllForAddressGroupBy(address)
+}
+
+func GetAllForAddress(address common.Address, limit int, offset int) ([]types.ModelTransferEvent, error) {
+	return transfer_event_model.GetAllForAddress(address, limit, offset)
+}
 
 func BatchInsertOrUpdate(transferEvents []types.ModelTransferEvent) ([]int, error) {
 	return transfer_event_model.BatchInsertOrUpdate(transferEvents)

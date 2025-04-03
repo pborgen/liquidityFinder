@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/pborgen/liquidityFinder/internal/database"
 	"github.com/pborgen/liquidityFinder/internal/database/model/orm"
 	"github.com/pborgen/liquidityFinder/internal/myUtil"
@@ -21,9 +22,66 @@ const tableName = "TRANSFER_EVENT"
 
 var transferEventColumnNames = orm.GetColumnNames(types.ModelTransferEvent{})
 
+
+
 func init() {
 
 }
+
+func GetAllForAddressGroupBy(address common.Address) ([]types.TransferEventGroupBy, error) {
+
+	db := database.GetDBConnection()
+
+	sql := "SELECT FROM_ADDRESS, TO_ADDRESS, COUNT(*) as TRANSACTION_COUNT FROM " + tableName + " WHERE FROM_ADDRESS = $1 OR TO_ADDRESS = $1 GROUP BY FROM_ADDRESS, TO_ADDRESS"
+	rows, err := db.Query(
+		sql, 
+		address.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []types.TransferEventGroupBy
+	for rows.Next() {
+		var event types.TransferEventGroupBy
+		err := rows.Scan(&event.FromAddress, &event.ToAddress, &event.TransactionCount)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+
+	return events, nil	
+}
+	
+func GetAllForAddress(address common.Address, limit int, offset int) ([]types.ModelTransferEvent, error) {
+	db := database.GetDBConnection()
+
+	rows, err := db.Query(
+		"SELECT " + transferEventColumnNames + " FROM " + tableName + " WHERE FROM_ADDRESS = $1 OR TO_ADDRESS = $1 LIMIT $2 OFFSET $3", 
+		address.Hex(), 
+		limit, 
+		offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []types.ModelTransferEvent
+	for rows.Next() {
+		event, err := scan(rows)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, *event)
+	}	
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}	
 
 func Exists(blockNumber uint64, index int) (bool, error) {
 	db := database.GetDBConnection()

@@ -22,7 +22,7 @@ func main() {
 	r := router.SetupRouter()
 	
 	// Start server
-	port := ":8080"
+	port := ":3001"
 	log.Info().Msgf("Server starting on port %s", port)
 	if err := r.Run(port); err != nil {
 		log.Fatal().Err(err).Msg("Failed to start server")

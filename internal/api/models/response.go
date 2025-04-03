@@ -21,6 +21,12 @@ type TokenAmountsResponse struct {
 	Pagination Pagination 				   `json:"pagination"`
 }
 
+type TransferEventsGroupByResponse struct {
+	Success    bool       				   `json:"success"`
+	Data      []types.TransferEventGroupBy     `json:"data"`
+	Pagination Pagination 				   `json:"pagination"`
+}
+
 
 type ErrorResponse struct {
 	Success bool `json:"success"`

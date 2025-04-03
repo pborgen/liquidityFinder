@@ -51,7 +51,7 @@ func main() {
 	if processName == "api" {
 		// Initialize and start the API server
 		r := router.SetupRouter()
-		port := ":8080"
+		port := ":3001"
 		log.Info().Msgf("API server starting on port %s", port)
 		if err := r.Run(port); err != nil {
 			log.Fatal().Err(err).Msg("Failed to start API server")
@@ -66,7 +66,7 @@ func main() {
 	} else if processName == "updateReservesAndHighLiquidity" {
 		for {
 			pairService.UpdateIsHighLiquidityForAllPairs(false)
-			time.Sleep(10 * time.Hour)
+			time.Sleep(36 * time.Hour)
 		}
 	} else if processName == "addNewPairsForAllV3Dexes" {
 		pairServiceV3.AddNewPairForAllV3Dexes(pulsechainNetworkId)

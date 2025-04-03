@@ -47,6 +47,19 @@ services:
         max-size: "10m"
     command: /app/cmd/start processTokenAmounts
 
+  updateReservesAndHighLiquidity:
+    container_name: updateReservesAndHighLiquidity
+    image: registry.digitalocean.com/hexlive/liquidity-finder:latest
+    restart: unless-stopped
+    volumes:
+      - /opt/.env:/opt/.env
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    logging:
+      options:
+        max-size: "10m"
+    command: /app/cmd/start updateReservesAndHighLiquidity
+
   gatherPairs:
     container_name: gatherPairs
     image: registry.digitalocean.com/hexlive/liquidity-finder:latest
@@ -72,7 +85,7 @@ services:
     command: >
       --maxmemory 2g
       --dir /data
-      --snapshot_cron "0 1 * * *"
+      --snapshot_cron "0 1 */3 * *"
       --requirepass ${DRAGONFLY_PASSWORD}
     restart: unless-stopped
     networks:
@@ -98,12 +111,11 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /root/.docker/config.json:/config.json
-    command: --include-stopped --interval 30 -v populateTransferEvents processTokenAmounts gatherPairs
+    command: --include-stopped --interval 30 -v populateTransferEvents processTokenAmounts gatherPairs updateReservesAndHighLiquidity
     restart: unless-stopped
     logging:
       options:
         max-size: "10m"
-
 
 volumes:
   pgdata:

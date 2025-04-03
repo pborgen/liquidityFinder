@@ -44,6 +44,11 @@ type NameValue struct {
 	DataType int `postgres.Table:"DATA_TYPE"`
 }
 
+type TransferEventGroupBy struct {
+	FromAddress common.Address `postgres.Table:"FROM_ADDRESS"`
+	ToAddress common.Address `postgres.Table:"TO_ADDRESS"`
+	TransactionCount int `postgres.Table:"TRANSACTION_COUNT"`
+}
 type ModelTransferEvent struct {
 	BlockNumber uint64 `postgres.Table:"BLOCK_NUMBER"`
 	LogIndex int `postgres.Table:"LOG_INDEX"`

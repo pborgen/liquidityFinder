@@ -36,6 +36,12 @@ func SetupRouter() *gin.Engine {
 		{
 			tokenAmounts.GET("/:tokenAddress", handlers.GetTokenAmountsForTokenAddress)
 		}
+
+		// Transfer events endpoints
+		transferEvents := v1.Group("/transfer-events")
+		{
+			transferEvents.GET("/:address", handlers.GetTransferEventsForAddress)
+		}
 	}
 
 
