@@ -21,6 +21,23 @@ services:
       retries: 3
       start_period: 40s
 
+  api:
+    image: registry.digitalocean.com/hexlive/liquidity-finder:latest
+    container_name: api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - /opt/.env:/opt/.env
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    logging:
+      options:
+        max-size: "10m"
+    command: /app/cmd/start api
+    networks:
+      - caddy
+
   populateTransferEvents:
     container_name: populateTransferEvents
     image: registry.digitalocean.com/hexlive/liquidity-finder:latest
@@ -111,7 +128,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /root/.docker/config.json:/config.json
-    command: --include-stopped --interval 30 -v populateTransferEvents processTokenAmounts gatherPairs updateReservesAndHighLiquidity
+    command: --include-stopped --interval 30 -v api populateTransferEvents processTokenAmounts gatherPairs updateReservesAndHighLiquidity
     restart: unless-stopped
     logging:
       options:

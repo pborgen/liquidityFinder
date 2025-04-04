@@ -2,6 +2,10 @@ cache.hexlive.net {
     reverse_proxy dragonfly:6379
 }
 
+api.hexlive.net {
+    reverse_proxy api:3001
+}
+
 agent.bot1.hexlive.net {
     reverse_proxy portainer_agent:9001 {
         transport http {

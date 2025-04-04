@@ -28,11 +28,28 @@ func init() {
 
 }
 
-func GetAllForAddressGroupBy(address common.Address) ([]types.TransferEventGroupBy, error) {
+func GetAllForAddressGroupBy(address common.Address, viewMode string) ([]types.TransferEventGroupBy, error) {
 
 	db := database.GetDBConnection()
 
-	sql := "SELECT FROM_ADDRESS, TO_ADDRESS, COUNT(*) as TRANSACTION_COUNT FROM " + tableName + " WHERE FROM_ADDRESS = $1 OR TO_ADDRESS = $1 GROUP BY FROM_ADDRESS, TO_ADDRESS"
+	
+	selectStatement := "SELECT FROM_ADDRESS, TO_ADDRESS, COUNT(*) as TRANSACTION_COUNT "
+	fromAddressStatement := " FROM " + tableName
+	whereStatement := ""
+	groupByStatement := " GROUP BY FROM_ADDRESS, TO_ADDRESS "
+	orderByStatement := " ORDER BY TRANSACTION_COUNT DESC"
+	limitStatement := " LIMIT 5000"
+
+	if viewMode == "all" {
+		whereStatement = " WHERE FROM_ADDRESS = $1 OR TO_ADDRESS = $1"
+	} else if viewMode == "in" {
+		whereStatement = " WHERE TO_ADDRESS = $1"
+	} else if viewMode == "out" {
+		whereStatement = " WHERE FROM_ADDRESS = $1"
+	}
+
+	sql := selectStatement + fromAddressStatement + whereStatement + groupByStatement + orderByStatement + limitStatement
+
 	rows, err := db.Query(
 		sql, 
 		address.Bytes())

@@ -6,8 +6,8 @@
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "cmd/api/main.go",
-      "args": ["start"],
+      "program": "cmd/start.go",
+      "args": ["api"],
       "env": {
         "BASE_DIR": "${workspaceFolder}"
       }

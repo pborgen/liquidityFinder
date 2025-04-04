@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"github.com/pborgen/liquidityFinder/internal/api/router"
@@ -7,7 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func main() {
+func Start() {
 	// Initialize logger
 	mylogger.Init()
 	log.Info().Msg("Starting API server...")

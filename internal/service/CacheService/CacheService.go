@@ -88,6 +88,13 @@ var ( CacheType_TokenAmountService_GetByOwnerAddress = CacheType {
 }
 )
 
+var ( CacheType_TransferEventService_GetAllForAddressGroupBy = CacheType {
+    Name: "TransferEventService_GetAllForAddressGroupBy",
+    Type: []types.TransferEventGroupBy{},
+    Expiration: 30 * time.Minute,
+    Compress: true,
+}
+)
 
 // DragonflyService handles all Dragonfly operations
 type CacheService struct {

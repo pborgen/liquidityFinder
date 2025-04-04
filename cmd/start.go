@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/pborgen/liquidityFinder/cmd/dexpairgather"
-	"github.com/pborgen/liquidityFinder/internal/api/router"
 
 	"github.com/pborgen/liquidityFinder/internal/myConfig"
 	"github.com/pborgen/liquidityFinder/internal/mylogger"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/pborgen/liquidityFinder/cmd/api"
 	"github.com/pborgen/liquidityFinder/cmd/updateSymbol"
 	"github.com/pborgen/liquidityFinder/internal/service/pairServiceV3"
 )
@@ -50,14 +50,9 @@ func main() {
 	
 	if processName == "api" {
 		// Initialize and start the API server
-		r := router.SetupRouter()
-		port := ":3001"
-		log.Info().Msgf("API server starting on port %s", port)
-		if err := r.Run(port); err != nil {
-			log.Fatal().Err(err).Msg("Failed to start API server")
-		}
+		api.Start()
 	} else if processName == "test" {
-		
+		log.Info().Msgf("Testing...")
 	} else if processName == "gatherPairs" {
 		for {	
 			dexpairgather.Start()

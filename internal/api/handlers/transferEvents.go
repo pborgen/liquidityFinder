@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,8 +15,19 @@ import (
 func GetTransferEventsForAddress(c *gin.Context) {
 	// Get query parameters
 	address := c.Param("address")
+	viewMode := c.Query("viewMode")
 
-	transferEvents, err := transferEventService.GetAllForAddressGroupBy(common.HexToAddress(address))
+	if viewMode == "" {
+		viewMode = "all"
+	}
+
+	if viewMode != "all" && viewMode != "in" && viewMode != "out" {
+		HandleGeneralError(c, "Invalid view mode", errors.New("invalid view mode"))
+		return
+	}
+
+	transferEvents, err := 
+		transferEventService.GetAllForAddressGroupBy(common.HexToAddress(address), viewMode)
 
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get pairs")
