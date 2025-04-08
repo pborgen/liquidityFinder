@@ -50,6 +50,7 @@ type TransferEventGroupBy struct {
 	TransactionCount int `postgres.Table:"TRANSACTION_COUNT"`
 }
 type ModelTransferEvent struct {
+	TransactionHash common.Hash `postgres.Table:"TRANSACTION_HASH"`
 	BlockNumber uint64 `postgres.Table:"BLOCK_NUMBER"`
 	LogIndex int `postgres.Table:"LOG_INDEX"`
 	ContractAddress common.Address `postgres.Table:"CONTRACT_ADDRESS"`

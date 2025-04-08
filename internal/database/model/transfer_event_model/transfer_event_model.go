@@ -237,7 +237,7 @@ func BatchInsertOrUpdate(transferEvents []types.ModelTransferEvent) ([]int, erro
 		var sqlBuilder strings.Builder
 		sqlBuilder.WriteString(`
 			INSERT INTO ` + tableName + ` (
-				BLOCK_NUMBER, LOG_INDEX, CONTRACT_ADDRESS, 
+				TRANSACTION_HASH, BLOCK_NUMBER, LOG_INDEX, CONTRACT_ADDRESS, 
 				FROM_ADDRESS, TO_ADDRESS, EVENT_VALUE
 			) VALUES `)
 
@@ -265,12 +265,15 @@ func BatchInsertOrUpdate(transferEvents []types.ModelTransferEvent) ([]int, erro
 			sqlBuilder.WriteString(strconv.Itoa(count+4))
 			sqlBuilder.WriteString(", $")
 			sqlBuilder.WriteString(strconv.Itoa(count+5))
+			sqlBuilder.WriteString(", $")
+			sqlBuilder.WriteString(strconv.Itoa(count+6))
 			sqlBuilder.WriteString(")")
 
-			count += 6
+			count += 7
 
 			args = append(
 				args, 
+				event.TransactionHash,
 				event.BlockNumber, 
 				event.LogIndex, 
 				event.ContractAddress, 
@@ -400,6 +403,7 @@ func scan(rows orm.Scannable) (*types.ModelTransferEvent, error) {
 	var tempValue []uint8
 
 	err := rows.Scan(
+		&transferEvent.TransactionHash,
 		&transferEvent.BlockNumber,
 		&transferEvent.LogIndex,
 		&transferEvent.ContractAddress,

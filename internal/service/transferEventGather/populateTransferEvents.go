@@ -123,6 +123,7 @@ func Start() {
 				}
 
 				transferEvents = append(transferEvents, types.ModelTransferEvent{
+					TransactionHash: transfer.TxHash,
 					BlockNumber: transfer.Block,
 					LogIndex: index,
 					ContractAddress: transfer.ContractAddress,
