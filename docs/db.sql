@@ -238,9 +238,8 @@ CREATE INDEX IDX_TRANSFER_EVENT_TO ON TRANSFER_EVENT (TO_ADDRESS);
 
 CREATE VIEW transfer_event_view AS
 SELECT 
-    id,
+    '0x' || encode(transaction_hash, 'hex') AS transaction_hash,
     block_number,
-    transaction_hash,
     log_index,
     '0x' || encode(contract_address, 'hex') AS contract_address,
     '0x' || encode(from_address, 'hex') AS from_address,

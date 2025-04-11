@@ -3,6 +3,9 @@ cache.hexlive.net {
 }
 
 api.hexlive.net {
+    tls {
+        protocols tls1.2 tls1.3
+    }
     reverse_proxy api:3001
 }
 
